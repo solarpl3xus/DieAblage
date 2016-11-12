@@ -1,0 +1,14 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/Ablage/bin/Debug
+/Ablage/obj/Debug
+/Ablage/AblagenController.cs~RF2c12c5.TMP
+/AblageClientTest/bin/Debug/log
+/AblageClientTest/bin/Debug
+/AblageClientTest/obj/Debug
+/AblageServer/obj/Debug
+/packages
+/AblageServer/bin/Debug
+/.vs
