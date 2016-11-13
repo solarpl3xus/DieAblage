@@ -15,12 +15,16 @@ namespace Ablage
     {
         private AblagenController controller;
 
+        private List<string> onlineClients;
+
         public MainForm(AblagenController ablagenController)
         {
+            onlineClients = new List<string>();
+
             InitializeComponent();
             controller = ablagenController;
 
-            controller.Form = this;
+            controller.Form = this;            
         }
 
         private void OnSendFileButtonClick(object sender, EventArgs e)

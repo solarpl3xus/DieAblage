@@ -152,7 +152,7 @@ namespace Ablage
                 logger.Debug("Host shutdown");
                 messageType = MessageType.ServerShutdown;
             }
-            if (message == "OK")
+            else if (message == "OK")
             {
                 messageType = MessageType.AcceptSend;
             }
