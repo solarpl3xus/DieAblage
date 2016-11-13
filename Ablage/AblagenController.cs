@@ -28,7 +28,7 @@ namespace Ablage
 
         public AblagenController()
         {
-            AblagenConfiguration.ReadConfiguration();
+            AblagenConfiguration.SetupConfiguration();
 
             pendingFile = new List<string>();
 
@@ -196,20 +196,7 @@ namespace Ablage
                         string fileName = message.Substring(1);
                         ReceiveFile(fileName);
                     }
-                    /*
-                    var bytes = encoder.GetBytes("OK");
-                    hostControlStream.Write(bytes, 0, bytes.Length);
 
-                    using (var output = File.Create(fileName))
-                    {
-                        Console.WriteLine("Client connected. Starting to receive the file");
-
-                        // read the file in chunks of 1KB
-                        while ((bytesRead = hostControlStream.Read(buffer, 0, buffer.Length)) > 0)
-                        {
-                            output.Write(buffer, 0, bytesRead);
-                        }
-                    }*/
 
                 }
             }
@@ -223,7 +210,7 @@ namespace Ablage
 
         private void ReceiveFile(string fileName)
         {
-            using (var output = File.Create(fileName))
+            using (var output = File.Create(AblagenConfiguration.OutputPath + fileName))
             {
                 Console.WriteLine("Client connected. Starting to receive the file");
 

@@ -8,9 +8,12 @@ namespace Ablage
 {
     static class Program
     {
-        // log received files
-        // register at dyndns
         // encryption
+        // investigate growing size bug
+        // GUI
+        //  see whos online
+        //  progress bar for file transfer
+        // notification for download
 
         /// <summary>
         /// The main entry point for the application.

@@ -85,23 +85,22 @@ namespace AblageServer
                     {
                         TcpClient client = tcpControlListener.AcceptTcpClient();
 
-                        string ipAddress = ((IPEndPoint)client.Client.LocalEndPoint).Address.ToString();
+                        string ipAddress = ((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString();
                         logger.Debug($"Client connected {ipAddress}");
 
                         if (onlineClients.ContainsKey(ipAddress))
                         {
-                            logger.Error("Already exists");
-                        }
-                        else
-                        {
-                            AblagenClient ablagenClient = new AblagenClient(client);
-                            ablagenClient.StartCommunication();
-                            ablagenClient.DistributeRequest += HandleDistributeRequest;
-                            onlineClients[ipAddress] = ablagenClient;
+                            logger.Warn("Already exists");
                         }
 
-                     /*   Thread clientThread = new Thread(new ParameterizedThreadStart(HandleClientComm));
-                        clientThread.Start(client);*/
+                        AblagenClient ablagenClient = new AblagenClient(client);
+                        ablagenClient.StartCommunication();
+                        ablagenClient.DistributeRequest += HandleDistributeRequest;
+                        onlineClients[ipAddress] = ablagenClient;
+
+
+                        /*   Thread clientThread = new Thread(new ParameterizedThreadStart(HandleClientComm));
+                           clientThread.Start(client);*/
                     }
                 }
                 catch (SocketException)
@@ -148,7 +147,7 @@ namespace AblageServer
                         //blocks until a client has connected to the server
                         TcpClient dataclient = tcpDataListener.AcceptTcpClient();
 
-                        string ipAddress = ((IPEndPoint)dataclient.Client.LocalEndPoint).Address.ToString();
+                        string ipAddress = ((IPEndPoint)dataclient.Client.RemoteEndPoint).Address.ToString();
                         logger.Debug($"Data client connected {ipAddress}");
 
                         if (!onlineClients.ContainsKey(ipAddress))
