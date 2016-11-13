@@ -37,7 +37,7 @@ namespace Ablage
         }
 
         private void ConnectToServer()
-        {            
+        {
             hostControlClient = new TcpClient(AblagenConfiguration.HostIp, AblagenConfiguration.HostControlPort);
 
             hostControlStream = hostControlClient.GetStream();
@@ -196,7 +196,7 @@ namespace Ablage
                         string fileName = message.Substring(1);
                         ReceiveFile(fileName);
                     }
-                   
+
 
                 }
             }
@@ -210,7 +210,7 @@ namespace Ablage
 
         private void ReceiveFile(string fileName)
         {
-            using (var output = File.Create(fileName))
+            using (var output = File.Create(AblagenConfiguration.OutputPath + fileName))
             {
                 Console.WriteLine("Client connected. Starting to receive the file");
 
