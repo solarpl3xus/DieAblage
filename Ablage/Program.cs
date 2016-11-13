@@ -8,8 +8,7 @@ namespace Ablage
 {
     static class Program
     {
-        // encryption
-        // investigate growing size bug
+        // encryption        
         // GUI
         //  see whos online
         //  progress bar for file transfer

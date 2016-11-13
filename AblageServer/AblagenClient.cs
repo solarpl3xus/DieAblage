@@ -153,6 +153,13 @@ namespace AblageServer
             logger.Info("Confirmed request");
         }
 
+        public static T[] SubArray<T>(T[] data, int index, int length)
+        {
+            T[] result = new T[length];
+            Array.Copy(data, index, result, 0, length);
+            return result;
+        }
+
         internal void HandleIncomingDataConnection(TcpClient dataclient)
         {
             new Thread(() =>
@@ -168,8 +175,8 @@ namespace AblageServer
                     int bytesRead = 0;
                     List<byte[]> bufferBlocks = new List<byte[]>();
                     while ((bytesRead = dataStream.Read(buffer, 0, buffer.Length)) > 0)
-                    {
-                        bufferBlocks.Add(buffer);
+                    {                        
+                        bufferBlocks.Add(SubArray(buffer,0, bytesRead));
                         buffer = new byte[1024];
                     }
 
