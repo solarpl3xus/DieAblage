@@ -53,6 +53,7 @@
   <ItemGroup>
     <Compile Include="AblagenClient.cs" />
     <Compile Include="AblageServerController.cs" />
+    <Compile Include="DistributionRequestArgs.cs" />
     <Compile Include="ServerForm.cs">
       <SubType>Form</SubType>
     </Compile>
