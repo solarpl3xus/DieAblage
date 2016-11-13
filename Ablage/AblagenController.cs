@@ -29,6 +29,7 @@ namespace Ablage
         public AblagenController()
         {
             AblagenConfiguration.SetupConfiguration();
+            
 
             pendingFile = new List<string>();
 
@@ -210,7 +211,8 @@ namespace Ablage
 
         private void ReceiveFile(string fileName)
         {
-            using (var output = File.Create(AblagenConfiguration.OutputPath + fileName))
+            string completePath = AdjustFilePathIfAlreadyExists(fileName);
+            using (var output = File.Create(completePath))
             {
                 Console.WriteLine("Client connected. Starting to receive the file");
 
@@ -233,6 +235,29 @@ namespace Ablage
             }
         }
 
+        private string AdjustFilePathIfAlreadyExists(string fileName)
+        {
+            string completeFilePath = $"{AblagenConfiguration.OutputPath}{fileName}";
+            int index = 0;
+            while (File.Exists(completeFilePath))
+            {
+                index++;
+                string alternateFileName = CreateAlternateFileName(fileName, index);
+                completeFilePath = $"{AblagenConfiguration.OutputPath}{alternateFileName}";
+            }
+            return completeFilePath;
+        }
 
+        private string CreateAlternateFileName(string fileName, int nameIndex)
+        {
+            string alternateFileName = $"{fileName}({nameIndex})";
+            if (fileName.Contains('.'))
+            {
+                int indexOFExtension = fileName.LastIndexOf('.');
+                alternateFileName = $"{fileName.Substring(0, indexOFExtension)}({nameIndex}){fileName.Substring(indexOFExtension)}";
+            }
+
+            return alternateFileName;
+        }
     }
 }
