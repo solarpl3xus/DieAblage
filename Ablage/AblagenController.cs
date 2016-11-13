@@ -42,7 +42,10 @@ namespace Ablage
             AblagenConfiguration.SetupConfiguration();
 
             pendingFile = new List<string>();
+        }
 
+        public void Start()
+        {
             ConnectToServer();
             StartListenerThread();
         }
@@ -117,6 +120,7 @@ namespace Ablage
                             HandleOnlineNotification(message);
                             break;
                         case MessageType.OfflineNotification:
+                            HandleOfflineNotification(message);
                             break;
                         case MessageType.Unknown:
                             logger.Debug("Unknow message type, discarding");
@@ -262,8 +266,15 @@ namespace Ablage
 
         private void HandleOnlineNotification(string message)
         {
-            string balloonMessage = $"{message.Substring(1)} has come online";
-            Form.ShowBalloonMessage(balloonMessage);
+            string clientName = message.Substring(1);
+            Form.RegisterOnlineClient(clientName);
+        }
+
+
+        private void HandleOfflineNotification(string message)
+        {
+            string clientName = message.Substring(1);
+            Form.DeregisterOnlineClient(clientName);
         }
     }
 }

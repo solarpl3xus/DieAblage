@@ -84,6 +84,8 @@ namespace AblageServer
                         ablagenClient.Disconnect += HandleClientDisconnect;
                         ablagenClient.SignIn += HandleSignIn;
                         onlineClients[ipAddress] = ablagenClient;
+
+                        
                     }
                 }
                 catch (SocketException)
@@ -158,6 +160,12 @@ namespace AblageServer
         private void HandleSignIn(AblagenClient sendingClient, EventArgs e)
         {
             BroadcastMessage(sendingClient, $"+{sendingClient.Name}");
+
+            List<string> onlineClientNames = GetOtherOnlineClients(sendingClient).Select(k => k.Name).ToList();
+            for (int i = 0; i < onlineClientNames.Count; i++)
+            {
+                sendingClient.SendControlMessage($"+{onlineClientNames[i]}");
+            }
         }
 
 

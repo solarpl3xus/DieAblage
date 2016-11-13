@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO;
+using System.Threading;
 
 namespace Ablage
 {
@@ -20,18 +21,16 @@ namespace Ablage
         public MainForm(AblagenController ablagenController)
         {
             onlineClients = new List<string>();
-
             InitializeComponent();
+            onlineClientsBox.DataSource = onlineClients;
+            
             controller = ablagenController;
-
-            controller.Form = this;            
+            controller.Form = this;
+            controller.Start();
         }
 
         private void OnSendFileButtonClick(object sender, EventArgs e)
-        {
-            //ShowBalloonMessage("BANG");
-
-            
+        {            
             OpenFileDialog openFileDialog = new OpenFileDialog();
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
@@ -50,6 +49,36 @@ namespace Ablage
 
             notifyIcon.Icon = SystemIcons.Application;
             notifyIcon.ShowBalloonTip(30000);
+        }
+
+        internal void RegisterOnlineClient(string clientName)
+        {
+            List<string> nList = new List<string>();
+
+             Invoke((MethodInvoker)(() =>
+             {
+                 nList.AddRange(onlineClients);
+                 nList.Add(clientName);
+
+                 onlineClientsBox.DataSource = nList;
+                 onlineClients = nList;
+
+             }));
+        }
+
+        internal void DeregisterOnlineClient(string clientName)
+        {
+            List<string> nList = new List<string>();
+
+            Invoke((MethodInvoker)(() =>
+            {
+                nList.AddRange(onlineClients);
+                nList.Remove(clientName);
+
+                onlineClientsBox.DataSource = nList;
+                onlineClients = nList;
+
+            }));
         }
     }
 }
