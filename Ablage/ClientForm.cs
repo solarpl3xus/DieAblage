@@ -20,11 +20,14 @@ namespace Ablage
             InitializeComponent();
             controller = ablagenController;
 
-            
+            controller.Form = this;
         }
 
         private void OnSendFileButtonClick(object sender, EventArgs e)
         {
+            ShowBalloonMessage("BANG");
+
+            /*
             Encryption enc = new Encryption();
             OpenFileDialog openFileDialog = new OpenFileDialog();
             if (openFileDialog.ShowDialog() == DialogResult.OK)
@@ -32,7 +35,20 @@ namespace Ablage
                 enc.EncryptFile(openFileDialog.FileName, "test");
                 controller.SendFileToServer(openFileDialog.FileName);// + "_enc");
                 File.Delete(openFileDialog.FileName + "_enc");
-            }
+            }*/
+        }
+
+        internal void ShowBalloonMessage(string balloonMessage)
+        {
+            NotifyIcon notifyIcon = new NotifyIcon();
+            notifyIcon.Visible = true;
+
+
+            notifyIcon.BalloonTipTitle = "Die Ablage";
+            notifyIcon.BalloonTipText = balloonMessage;
+
+            notifyIcon.Icon = SystemIcons.Application;
+            notifyIcon.ShowBalloonTip(30000);
         }
     }
 }

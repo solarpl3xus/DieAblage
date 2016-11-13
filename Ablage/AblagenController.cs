@@ -11,20 +11,21 @@ namespace Ablage
 {
     enum MessageType
     {
-        
+
         Unknown,
         ServerShutdown,
         AcceptSend,
-        IncomingFileTransfer
+        IncomingFileTransfer,
+        OnlineNotification,
+        OfflineNotification
     }
 
     internal class AblagenController
     {
         private static log4net.ILog logger = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
-        private Thread listenerThread;
+        private Thread receiverThread;
 
-        private Thread controlMessageThread;
 
         private TcpClient hostControlClient;
         private NetworkStream hostControlStream;
@@ -34,10 +35,11 @@ namespace Ablage
 
         private List<string> pendingFile;
 
+        public MainForm Form { get; internal set; }
+
         public AblagenController()
         {
             AblagenConfiguration.SetupConfiguration();
-            
 
             pendingFile = new List<string>();
 
@@ -56,6 +58,13 @@ namespace Ablage
             logger.Debug($"logged in as {AblagenConfiguration.ClientName}");
         }
 
+
+        private void StartListenerThread()
+        {
+            receiverThread = new Thread(new ThreadStart(Receive));
+            receiverThread.Start();
+        }
+
         internal void Disconnect()
         {
             hostControlStream.Close();
@@ -69,136 +78,23 @@ namespace Ablage
                 logger.Info($"Request send {fileName} to server");
 
                 pendingFile.Add(fileName);
-                SendMessage(hostControlClient, $"<{fileName.Substring(fileName.LastIndexOf('\\') + 1)}");
+                SendControlMessage($"<{fileName.Substring(fileName.LastIndexOf('\\') + 1)}");
             }
 
             ).Start();
         }
 
-        internal void SendFileToOnlineClients(string fileName)
-        {
-            string[] ips = GetOnlineClients();
 
-            for (int i = 0; i < ips.Length; i++)
-            {
-                int index = i;
-                new Thread(() => SendFile(ips[index], fileName)).Start();
-                //Thread clientThread = new Thread(new ParameterizedThreadStart(SendFil111e));
-                /*clientThreads.Add(clientThread);
-                clientThread.Start(chatClient);
-                listenerThread = new Thread(new ThreadStart(ListenAndAccept));
-                listenerThread.Start();*/
-            }
-        }
-
-        //        internal void SendFile(ob
-
-        internal void SendFile(string ipAddress, string fileName)
-        {
-            logger.Info($"1Sending {fileName} to {ipAddress}");
-            //IPEndPoint ipEndPoint = new IPEndPoint(IPAddress.Parse("2a02:908:1582:20e0:d4f5:c8f6:667e:8a4b"), 11000);
-            IPEndPoint ipEndPoint = new IPEndPoint(IPAddress.Parse(ipAddress), AblagenConfiguration.HostDataPort);
-
-            logger.Info($"2Sending {fileName} to {ipAddress}");
-
-            // Create a TCP socket.
-
-            Socket sendClient = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-
-            sendClient.Connect(ipEndPoint);
-
-            /* SendMessage(sendClient, fileName.Substring(fileName.LastIndexOf('\\') + 1));
-
-             string message = ReceiveMessage(sendClient);*/
-
-            logger.Info($"Sending {fileName} to {ipAddress}");
-
-            sendClient.SendFile(fileName);
-
-            sendClient.Shutdown(SocketShutdown.Both);
-            sendClient.Close();
-
-            logger.Info($"Sent {fileName} to {ipAddress}");
-        }
-
-        private string[] GetOnlineClients()
-        {
-            string[] ips = new string[0];
-            if (hostControlClient.Connected)
-            {
-                SendMessage(hostControlClient, $"!{AblagenConfiguration.ClientName}");
-                string onlineClients = ReceiveMessage(hostControlClient);
-                ips = onlineClients.Split(',').Select(t => t.Substring(0, t.LastIndexOf(':'))).ToArray();
-            }
-            return ips;
-        }
-
-        private void SendMessage(TcpClient tcpClient, string message)
+        private void SendControlMessage(string message)
         {
             ASCIIEncoding encoder = new ASCIIEncoding();
             byte[] buffer = encoder.GetBytes(message);
 
-            NetworkStream stream = tcpClient.GetStream();
-            stream.Write(Encoding.ASCII.GetBytes(message), 0, message.Length);
-        }
-
-        private string ReceiveMessage(TcpClient tcpClient)
-        {
-            NetworkStream netStream = tcpClient.GetStream();
-            byte[] rawMessage = new byte[bufferSize];
-            int bytesRead = netStream.Read(rawMessage, 0, bufferSize);
-            if (bytesRead == 0)
-            {
-                logger.Debug("Says: client disconnected");
-            }
-
-            string message = Encoding.ASCII.GetString(rawMessage).Substring(0, bytesRead).Trim('\0');
-
-            return message;
+            hostControlStream.Write(Encoding.ASCII.GetBytes(message), 0, message.Length);
         }
 
 
-
-        internal void StartListenerThread()
-        {
-            listenerThread = new Thread(new ThreadStart(ListenAndAccept));
-            listenerThread.Start();
-        }
-
-
-        private MessageType ReceiveControlMessage(out string message)
-        {
-            message = string.Empty;
-            MessageType messageType;
-
-            byte[] rawMessage = new byte[bufferSize];
-            int bytesRead;
-            
-            bytesRead = hostControlStream.Read(rawMessage, 0, bufferSize);
-            message = Encoding.ASCII.GetString(rawMessage).Substring(0, bytesRead).Substring(0, bytesRead);
-            logger.Info($"> {message}");
-            if (bytesRead == 0)
-            {
-                logger.Debug("Host shutdown");
-                messageType = MessageType.ServerShutdown;
-            }
-            if (message == "OK")
-            {                
-                messageType = MessageType.AcceptSend;
-            }
-            else if (message.StartsWith(">"))
-            {
-                messageType = MessageType.IncomingFileTransfer;                
-            }            
-            else
-            {
-                messageType = MessageType.Unknown;
-            }
-
-            return messageType;
-        }
-
-        private void ListenAndAccept()
+        private void Receive()
         {
             try
             {
@@ -217,6 +113,11 @@ namespace Ablage
                         case MessageType.IncomingFileTransfer:
                             HandleIncomingFileTransfer(message);
                             break;
+                        case MessageType.OnlineNotification:
+                            HandleOnlineNotification(message);
+                            break;
+                        case MessageType.OfflineNotification:
+                            break;
                         case MessageType.Unknown:
                             logger.Debug("Unknow message type, discarding");
                             break;
@@ -233,7 +134,50 @@ namespace Ablage
                 throw;
             }
         }
-        
+
+
+        private MessageType ReceiveControlMessage(out string message)
+        {
+            message = string.Empty;
+            MessageType messageType;
+
+            byte[] rawMessage = new byte[bufferSize];
+            int bytesRead;
+
+            bytesRead = hostControlStream.Read(rawMessage, 0, bufferSize);
+            message = Encoding.ASCII.GetString(rawMessage).Substring(0, bytesRead).Substring(0, bytesRead);
+            logger.Info($"> {message}");
+            if (bytesRead == 0)
+            {
+                logger.Debug("Host shutdown");
+                messageType = MessageType.ServerShutdown;
+            }
+            if (message == "OK")
+            {
+                messageType = MessageType.AcceptSend;
+            }
+            else if (message.StartsWith(">"))
+            {
+                messageType = MessageType.IncomingFileTransfer;
+            }
+            else if (message.StartsWith("+"))
+            {
+                messageType = MessageType.OnlineNotification;
+            }
+            else if (message.StartsWith("-"))
+            {
+                messageType = MessageType.OfflineNotification;
+            }
+            else
+            {
+                messageType = MessageType.Unknown;
+            }
+
+            return messageType;
+        }
+
+
+
         private void HandleFileUpload(string message)
         {
             logger.Info($"Server confirmed request to send file");
@@ -256,6 +200,7 @@ namespace Ablage
 
             hostControlStream.Write(Encoding.ASCII.GetBytes("DISTRIBUTE"), 0, "DISTRIBUTE".Length);
         }
+
 
         private void HandleIncomingFileTransfer(string message)
         {
@@ -312,6 +257,13 @@ namespace Ablage
             }
 
             return alternateFileName;
+        }
+
+
+        private void HandleOnlineNotification(string message)
+        {
+            string balloonMessage = $"{message.Substring(1)} has come online";
+            Form.ShowBalloonMessage(balloonMessage);
         }
     }
 }
