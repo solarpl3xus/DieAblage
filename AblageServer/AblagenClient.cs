@@ -22,6 +22,12 @@ namespace AblageServer
         public delegate void DistributeRequestHandler(AblagenClient sendingClient, DistributionRequestArgs e);
         public event DistributeRequestHandler DistributeRequest;
 
+        public delegate void DisconnectHandler(AblagenClient sendingClient, EventArgs e);
+        public event DisconnectHandler Disconnect;
+
+        public delegate void SignInHandler(AblagenClient sendingClient, EventArgs e);
+        public event SignInHandler SignIn;
+
         private int bufferSize = 256;
 
         private TcpClient controlClient;
@@ -56,7 +62,8 @@ namespace AblageServer
             int bytesRead;
             try
             {
-                while (true)
+                bool clientConnected = true;
+                while (clientConnected)
                 {
                     bytesRead = 0;
                     bytesRead = controlStream.Read(rawMessage, 0, bufferSize);
@@ -67,8 +74,8 @@ namespace AblageServer
                     }
                     Name = Encoding.ASCII.GetString(rawMessage).Substring(0, bytesRead);
                     logger.Info($"{Name} signed in");
+                    SignIn?.Invoke(this, new EventArgs());
 
-                    bool clientConnected = true;
                     while (clientConnected)
                     {
                         bytesRead = 0;
@@ -86,6 +93,7 @@ namespace AblageServer
                                 HandleUploadRequest(message);
                                 break;
                             case MessageType.Unknown:
+                                logger.Debug("Unknown Message received, discarding");
                                 break;
                             default:
                                 break;
@@ -109,6 +117,8 @@ namespace AblageServer
                 {
                     controlClient.Close();
                 }
+
+                Disconnect?.Invoke(this, new EventArgs());
             }
         }
 
@@ -149,7 +159,7 @@ namespace AblageServer
             pendingUploads.Add(fileName);
 
             logger.Info($"Request to receive {fileName} from {Name}");
-            controlStream.Write(Encoding.ASCII.GetBytes("OK"), 0, "OK".Length);
+            SendControlMessage("OK");
             logger.Info("Confirmed request");
         }
 
@@ -158,6 +168,11 @@ namespace AblageServer
             T[] result = new T[length];
             Array.Copy(data, index, result, 0, length);
             return result;
+        }
+
+        internal void SendControlMessage(string message)
+        {
+            controlStream.Write(Encoding.ASCII.GetBytes(message), 0, message.Length);
         }
 
         internal void HandleIncomingDataConnection(TcpClient dataclient)
@@ -175,8 +190,8 @@ namespace AblageServer
                     int bytesRead = 0;
                     List<byte[]> bufferBlocks = new List<byte[]>();
                     while ((bytesRead = dataStream.Read(buffer, 0, buffer.Length)) > 0)
-                    {                        
-                        bufferBlocks.Add(SubArray(buffer,0, bytesRead));
+                    {
+                        bufferBlocks.Add(SubArray(buffer, 0, bytesRead));
                         buffer = new byte[1024];
                     }
 
@@ -197,14 +212,14 @@ namespace AblageServer
                         DistributionRequestArgs distributeRequest = new DistributionRequestArgs(fileName, bufferedFile);
                         DistributeRequest(this, distributeRequest);
                     }
-                    
+
                 }
                 else
                 {
                     if (pendingDownloads.Any())
                     {
                         byte[] fileBytes = pendingDownloads.First();
-                        
+
                         dataclient.GetStream().Write(fileBytes, 0, fileBytes.Length);
                         logger.Info($"Sent file to client {dataclient.Client.LocalEndPoint.ToString()}");
                         dataclient.GetStream().Close();
@@ -222,8 +237,8 @@ namespace AblageServer
             {
                 try
                 {
-                    pendingDownloads.Add(distributionRequestArgs.FileBytes);                
-                    controlStream.Write(Encoding.ASCII.GetBytes(">" + distributionRequestArgs.FileName), 0, (">" + distributionRequestArgs.FileName).Length);
+                    pendingDownloads.Add(distributionRequestArgs.FileBytes);
+                    SendControlMessage($">{distributionRequestArgs.FileName}");
                 }
                 catch (Exception e)
                 {
