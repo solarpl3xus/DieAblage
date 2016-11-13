@@ -71,29 +71,28 @@ namespace Ablage
             return decryptedBytes;
         }
 
-
-
-        public void EncryptFile(string file, string password, string fileEncrypted)
+        public void EncryptFile(string filename, string password)
         {
-            byte[] bytesToBeEncrypted = File.ReadAllBytes(file);
+            byte[] bytesToBeEncrypted = File.ReadAllBytes(filename);
             byte[] passwordBytes = Encoding.UTF8.GetBytes(password);
 
             passwordBytes = SHA256.Create().ComputeHash(passwordBytes);
 
             byte[] bytesEncrypted = AES_Encrypt(bytesToBeEncrypted, passwordBytes);
 
-            File.WriteAllBytes(fileEncrypted, bytesEncrypted);
+            File.WriteAllBytes(filename + "_enc", bytesEncrypted);
         }
 
-        public void DecryptFile(string fileEncrypted, string password, string fileDecrypted)
+        public void DecryptFile(string filename, string password)
         {
-            byte[] bytesToBeDecrypted = File.ReadAllBytes(fileEncrypted);
+            byte[] bytesToBeDecrypted = File.ReadAllBytes(filename + "_enc");
             byte[] passwordBytes = Encoding.UTF8.GetBytes(password);
             passwordBytes = SHA256.Create().ComputeHash(passwordBytes);
 
             byte[] bytesDecrypted = AES_Decrypt(bytesToBeDecrypted, passwordBytes);
 
-            File.WriteAllBytes(fileDecrypted, bytesDecrypted);
+            File.WriteAllBytes(filename, bytesDecrypted);
+            File.Delete(filename + "_enc");
         }
     }
 }
