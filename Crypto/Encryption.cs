@@ -1,14 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.IO;
 using System.Linq;
-using System.Text;
 using System.Security.Cryptography;
-using System.IO;
-using System.Threading.Tasks;
+using System.Text;
 
-namespace Ablage
+namespace Crypto
 {
-    class Encryption
+    public class Encryption
     {
         private byte[] AES_Encrypt(byte[] bytesToBeEncrypted, byte[] passwordBytes)
         {
