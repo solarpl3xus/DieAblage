@@ -30,7 +30,7 @@ namespace Ablage
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
                 enc.EncryptFile(openFileDialog.FileName, "test");
-                controller.SendFileToServer(openFileDialog.FileName + "_enc");
+                controller.SendFileToServer(openFileDialog.FileName);// + "_enc");
                 File.Delete(openFileDialog.FileName + "_enc");
             }
         }

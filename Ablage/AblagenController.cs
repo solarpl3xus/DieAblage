@@ -9,6 +9,14 @@ using System.Threading;
 
 namespace Ablage
 {
+    enum MessageType
+    {
+        
+        Unknown,
+        ServerShutdown,
+        AcceptSend,
+        IncomingFileTransfer
+    }
 
     internal class AblagenController
     {
@@ -157,56 +165,102 @@ namespace Ablage
             listenerThread.Start();
         }
 
+
+        private MessageType ReceiveControlMessage(out string message)
+        {
+            message = string.Empty;
+            MessageType messageType;
+
+            byte[] rawMessage = new byte[bufferSize];
+            int bytesRead;
+            
+            bytesRead = hostControlStream.Read(rawMessage, 0, bufferSize);
+            message = Encoding.ASCII.GetString(rawMessage).Substring(0, bytesRead).Substring(0, bytesRead);
+            logger.Info($"> {message}");
+            if (bytesRead == 0)
+            {
+                logger.Debug("Host shutdown");
+                messageType = MessageType.ServerShutdown;
+            }
+            if (message == "OK")
+            {                
+                messageType = MessageType.AcceptSend;
+            }
+            else if (message.StartsWith(">"))
+            {
+                messageType = MessageType.IncomingFileTransfer;                
+            }            
+            else
+            {
+                messageType = MessageType.Unknown;
+            }
+
+            return messageType;
+        }
+
         private void ListenAndAccept()
         {
             try
             {
                 while (true)
                 {
-                    int bytesRead;
-                    var buffer = new byte[1024];
-                    ASCIIEncoding encoder = new ASCIIEncoding();
+                    string message = string.Empty;
+                    MessageType messageType = ReceiveControlMessage(out message);
 
-                    bytesRead = hostControlStream.Read(buffer, 0, buffer.Length);
-                    string message = encoder.GetString(buffer).Trim('\0');
-
-                    if (message == "OK")
+                    switch (messageType)
                     {
-                        logger.Info($"Server confirmed request to send file");
-
-                        string fileName = pendingFile.First();
-
-                        if (hostDataClient == null || !hostDataClient.Connected)
-                        {
-                            hostDataClient = new TcpClient(AblagenConfiguration.HostIp, AblagenConfiguration.HostDataPort);
-                        }
-
-                        byte[] fileBytes = File.ReadAllBytes(fileName);
-                        hostDataClient.GetStream().Write(fileBytes, 0, fileBytes.Length);
-
-                        logger.Info($"Sent {fileName} to Server");
-
-                        hostDataClient.GetStream().Close();
-                        hostDataClient.Close();
-                        pendingFile.Remove(fileName);
-
-                        hostControlStream.Write(Encoding.ASCII.GetBytes("DISTRIBUTE"), 0, "DISTRIBUTE".Length);
+                        case MessageType.ServerShutdown:
+                            break;
+                        case MessageType.AcceptSend:
+                            HandleFileUpload(message);
+                            break;
+                        case MessageType.IncomingFileTransfer:
+                            HandleIncomingFileTransfer(message);
+                            break;
+                        case MessageType.Unknown:
+                            logger.Debug("Unknow message type, discarding");
+                            break;
+                        default:
+                            break;
                     }
-                    else if (message.StartsWith(">"))
-                    {
-                        string fileName = message.Substring(1);
-                        ReceiveFile(fileName);
-                    }
-
-
                 }
             }
             catch (Exception e)
             {
+                logger.Fatal(e);
                 Console.WriteLine(e);
                 Environment.Exit(4919);
                 throw;
             }
+        }
+        
+        private void HandleFileUpload(string message)
+        {
+            logger.Info($"Server confirmed request to send file");
+
+            string fileName = pendingFile.First();
+
+            if (hostDataClient == null || !hostDataClient.Connected)
+            {
+                hostDataClient = new TcpClient(AblagenConfiguration.HostIp, AblagenConfiguration.HostDataPort);
+            }
+
+            byte[] fileBytes = File.ReadAllBytes(fileName);
+            hostDataClient.GetStream().Write(fileBytes, 0, fileBytes.Length);
+
+            logger.Info($"Sent {fileName} to Server");
+
+            hostDataClient.GetStream().Close();
+            hostDataClient.Close();
+            pendingFile.Remove(fileName);
+
+            hostControlStream.Write(Encoding.ASCII.GetBytes("DISTRIBUTE"), 0, "DISTRIBUTE".Length);
+        }
+
+        private void HandleIncomingFileTransfer(string message)
+        {
+            string fileName = message.Substring(1);
+            ReceiveFile(fileName);
         }
 
         private void ReceiveFile(string fileName)
