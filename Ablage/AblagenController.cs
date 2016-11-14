@@ -52,7 +52,31 @@ namespace Ablage
 
         private void ConnectToServer()
         {
-            hostControlClient = new TcpClient(AblagenConfiguration.HostIp, AblagenConfiguration.HostControlPort);
+            bool connected = false;
+            bool retry = false;
+            int logEntries = 0;
+
+            while (!connected)
+            {
+                if (retry)
+                {
+                    Thread.Sleep(5000);
+                }
+                try
+                {
+                    hostControlClient = new TcpClient(AblagenConfiguration.HostIp, AblagenConfiguration.HostControlPort);
+                    connected = true;
+                }
+                catch (Exception e)
+                {
+                    if (logEntries < 5)
+                    {
+                        logger.Error("Could not connect to server", e);
+                    }
+                    logEntries++;
+                    retry = true;
+                }
+            }
 
             hostControlStream = hostControlClient.GetStream();
 
@@ -101,7 +125,8 @@ namespace Ablage
         {
             try
             {
-                while (true)
+                bool serverOnline = true;
+                do
                 {
                     string message = string.Empty;
                     MessageType messageType = ReceiveControlMessage(out message);
@@ -109,6 +134,7 @@ namespace Ablage
                     switch (messageType)
                     {
                         case MessageType.ServerShutdown:
+                            serverOnline = false;
                             break;
                         case MessageType.AcceptSend:
                             HandleFileUpload(message);
@@ -128,14 +154,17 @@ namespace Ablage
                         default:
                             break;
                     }
-                }
+                } while (serverOnline);
             }
             catch (Exception e)
             {
-                logger.Fatal(e);
-                Console.WriteLine(e);
-                Environment.Exit(4919);
-                throw;
+            //2016 - 11 - 13 20:15:23,106[11] FATAL Ablage.AblagenController[(null)] - System.IO.IOException: Von der Übertragungsverbindung können keine Daten gelesen werden: Eine vorhandene Verbindung wurde vom Remotehost geschlossen. --->System.Net.Sockets.SocketException: Eine vorhandene Verbindung wurde vom Remotehost geschlossen
+                logger.Error("Exception during message processing", e);                
+            }
+            finally
+            {
+                Disconnect();
+                new Thread(Start).Start();
             }
         }
 
@@ -215,26 +244,34 @@ namespace Ablage
         private void ReceiveFile(string fileName)
         {
             string completePath = AdjustFilePathIfAlreadyExists(fileName);
-            using (var output = File.Create(completePath))
+
+            try
             {
-                Console.WriteLine("Client connected. Starting to receive the file");
-
-                if (hostDataClient == null || !hostDataClient.Connected)
+                using (var output = File.Create(completePath))
                 {
-                    hostDataClient = new TcpClient(AblagenConfiguration.HostIp, AblagenConfiguration.HostDataPort);
+                    Console.WriteLine("Client connected. Starting to receive the file");
+
+                    if (hostDataClient == null || !hostDataClient.Connected)
+                    {
+                        hostDataClient = new TcpClient(AblagenConfiguration.HostIp, AblagenConfiguration.HostDataPort);
+                    }
+
+                    NetworkStream hostDataStream = hostDataClient.GetStream();
+
+                    int bytesRead;
+                    var buffer = new byte[1024];
+                    // read the file in chunks of 1KB
+                    while ((bytesRead = hostDataStream.Read(buffer, 0, buffer.Length)) > 0)
+                    {
+                        output.Write(buffer, 0, bytesRead);
+                    }
+
+                    hostDataClient.Close();
                 }
-
-                NetworkStream hostDataStream = hostDataClient.GetStream();
-
-                int bytesRead;
-                var buffer = new byte[1024];
-                // read the file in chunks of 1KB
-                while ((bytesRead = hostDataStream.Read(buffer, 0, buffer.Length)) > 0)
-                {
-                    output.Write(buffer, 0, bytesRead);
-                }
-
-                hostDataClient.Close();
+            }
+            catch (Exception e)
+            {
+                logger.Error(e);
             }
         }
 
