@@ -6,6 +6,8 @@ using System.Net.Sockets;
 using System.Text;
 using System.Linq;
 using System.Threading;
+using System.Windows.Forms;
+using System.Drawing;
 
 namespace Ablage
 {
@@ -14,10 +16,11 @@ namespace Ablage
 
         Unknown,
         ServerShutdown,
-        AcceptSend,
+        AcceptFileSend,
         IncomingFileTransfer,
         OnlineNotification,
-        OfflineNotification
+        OfflineNotification,
+        AcceptByteSend
     }
 
     internal class AblagenController
@@ -35,6 +38,7 @@ namespace Ablage
         private TcpClient hostDataClient;
 
         private List<string> pendingFile;
+        private List<byte[]> pendingBytes;
 
         public MainForm Form { get; internal set; }
 
@@ -42,12 +46,13 @@ namespace Ablage
         {
             AblagenConfiguration.SetupConfiguration();
             pendingFile = new List<string>();
+            pendingBytes = new List<byte[]>();
         }
 
         public AblagenController(MainForm mainForm) : this()
         {
             Form = mainForm;
-            
+
             if (string.IsNullOrEmpty(AblagenConfiguration.ClientName))
             {
                 string name = Form.PromptForName();
@@ -110,14 +115,47 @@ namespace Ablage
             hostControlClient.Close();
         }
 
-        internal void SendFileToServer(string fileName)
+        internal void HandlePaste()
+        {
+            if (Clipboard.ContainsFileDropList())
+            {
+                string[] filePaths = Clipboard.GetFileDropList().Cast<string>().ToArray();
+                for (int i = 0; i < filePaths.Length; i++)
+                {
+                    SendFileToServer(filePaths[i]);
+                }
+            }
+            else if (Clipboard.ContainsImage())
+            {
+                Image image = Clipboard.GetImage();
+                MemoryStream ms = new MemoryStream();
+                image.Save(ms, System.Drawing.Imaging.ImageFormat.Bmp);
+                byte[] byteArray = ms.ToArray();
+                SendByteArrayToServer($"Screenshot{DateTime.Now.Ticks}.png", byteArray);
+            }
+        }
+
+        private void SendByteArrayToServer(string fileName, byte[] byteArray)
         {
             new Thread(() =>
             {
-                logger.Info($"Request send {fileName} to server");
+                logger.Info($"Request send byte array {fileName} to server");
 
-                pendingFile.Add(fileName);
-                SendControlMessage($"<{fileName.Substring(fileName.LastIndexOf('\\') + 1)}");
+                pendingBytes.Add(byteArray);
+                SendControlMessage($"<!{fileName}");
+            }
+
+            ).Start();
+        }
+
+        internal void SendFileToServer(string filePath)
+        {
+            new Thread(() =>
+            {
+                logger.Info($"Request send {filePath} to server");
+
+                pendingFile.Add(filePath);
+                SendControlMessage($"<{filePath.Substring(filePath.LastIndexOf('\\') + 1)}");
             }
 
             ).Start();
@@ -148,8 +186,11 @@ namespace Ablage
                         case MessageType.ServerShutdown:
                             serverOnline = false;
                             break;
-                        case MessageType.AcceptSend:
+                        case MessageType.AcceptFileSend:
                             HandleFileUpload(message);
+                            break;
+                        case MessageType.AcceptByteSend:
+                            HandleByteUpload(message);
                             break;
                         case MessageType.IncomingFileTransfer:
                             HandleIncomingFileTransfer(message);
@@ -205,7 +246,11 @@ namespace Ablage
             }
             else if (message == "OK")
             {
-                messageType = MessageType.AcceptSend;
+                messageType = MessageType.AcceptFileSend;
+            }
+            else if (message.StartsWith("OK!"))
+            {
+                messageType = MessageType.AcceptByteSend;
             }
             else if (message.StartsWith(">"))
             {
@@ -226,7 +271,6 @@ namespace Ablage
 
             return messageType;
         }
-
 
 
         private void HandleFileUpload(string message)
@@ -251,6 +295,30 @@ namespace Ablage
 
             hostControlStream.Write(Encoding.ASCII.GetBytes("DISTRIBUTE"), 0, "DISTRIBUTE".Length);
         }
+
+
+        private void HandleByteUpload(string message)
+        {
+            logger.Info($"Server confirmed request to send file");
+
+
+            if (hostDataClient == null || !hostDataClient.Connected)
+            {
+                hostDataClient = new TcpClient(AblagenConfiguration.HostIp, AblagenConfiguration.HostDataPort);
+            }
+
+            byte[] bytes = pendingBytes.First();
+            hostDataClient.GetStream().Write(bytes, 0, bytes.Length);
+
+            logger.Info($"Sent bytes to Server");
+
+            hostDataClient.GetStream().Close();
+            hostDataClient.Close();
+            pendingBytes.RemoveAt(0);
+
+            hostControlStream.Write(Encoding.ASCII.GetBytes("DISTRIBUTE"), 0, "DISTRIBUTE".Length);
+        }
+
 
 
         private void HandleIncomingFileTransfer(string message)
@@ -287,7 +355,7 @@ namespace Ablage
 
                     if (AblagenConfiguration.OpenFileAutomatically(completePath))
                     {
-                        System.Diagnostics.Process.Start(completePath); 
+                        System.Diagnostics.Process.Start(completePath);
                     }
                 }
             }

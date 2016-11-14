@@ -11,8 +11,9 @@ namespace AblageServer
     enum MessageType
     {
         Disconnect,
-        Upload,
-        Unknown
+        FileUpload,
+        Unknown,
+        ByteArrayUpload
     }
 
     public class AblagenClient
@@ -89,8 +90,11 @@ namespace AblageServer
                             case MessageType.Disconnect:
                                 clientConnected = false;
                                 break;
-                            case MessageType.Upload:
-                                HandleUploadRequest(message);
+                            case MessageType.FileUpload:
+                                HandleFileUploadRequest(message);
+                                break;
+                            case MessageType.ByteArrayUpload:
+                                HandleByteUploadRequest(message);
                                 break;
                             case MessageType.Unknown:
                                 logger.Debug("Unknown Message received, discarding");
@@ -122,6 +126,18 @@ namespace AblageServer
             }
         }
 
+        private void HandleByteUploadRequest(string message)
+        {
+            string fileName = message.Substring(2);
+
+            pendingUploads.Add(fileName);
+
+            logger.Info($"Request to receive {fileName} from {Name}");
+            SendControlMessage($"OK!{fileName}");
+            logger.Info("Confirmed request");
+        }
+
+
         private MessageType ReceiveControlMessage(out string message)
         {
             message = string.Empty;
@@ -140,9 +156,13 @@ namespace AblageServer
                 logger.Debug(Name + " says: client disconnected");
                 messageType = MessageType.Disconnect;
             }
+            else if (message.StartsWith("<!"))
+            {
+                messageType = MessageType.ByteArrayUpload;
+            }
             else if (message.StartsWith("<"))
             {
-                messageType = MessageType.Upload;
+                messageType = MessageType.FileUpload;
             }
             else
             {
@@ -152,7 +172,7 @@ namespace AblageServer
             return messageType;
         }
 
-        private void HandleUploadRequest(string message)
+        private void HandleFileUploadRequest(string message)
         {
             string fileName = message.Substring(1);
 

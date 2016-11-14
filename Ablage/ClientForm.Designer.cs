@@ -82,6 +82,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(320, 374);
             this.Controls.Add(this.splitContainer1);
+            this.KeyPreview = true;
             this.Name = "MainForm";
             this.Text = "Die Ablage";
             this.splitContainer1.Panel1.ResumeLayout(false);

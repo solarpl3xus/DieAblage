@@ -94,6 +94,15 @@ namespace Ablage
             }));
         }
 
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.V && e.Modifiers == Keys.Control)
+            {
+                controller.HandlePaste();
+            }
+            base.OnKeyDown(e);
+        }
+
         protected override void OnClosing(CancelEventArgs e)
         {
             if (controller != null)
