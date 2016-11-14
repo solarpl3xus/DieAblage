@@ -28,12 +28,34 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
+            this.distributeFileButton = new System.Windows.Forms.Button();
+            this.SuspendLayout();
+            // 
+            // distributeFileButton
+            // 
+            this.distributeFileButton.Location = new System.Drawing.Point(12, 12);
+            this.distributeFileButton.Name = "distributeFileButton";
+            this.distributeFileButton.Size = new System.Drawing.Size(260, 23);
+            this.distributeFileButton.TabIndex = 0;
+            this.distributeFileButton.Text = "Distribute File";
+            this.distributeFileButton.UseVisualStyleBackColor = true;
+            this.distributeFileButton.Click += new System.EventHandler(this.OnDistributeFileButtonClick);
+            // 
+            // ServerForm
+            // 
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.Text = "Form1";
+            this.ClientSize = new System.Drawing.Size(284, 262);
+            this.Controls.Add(this.distributeFileButton);
+            this.Name = "ServerForm";
+            this.Text = "Ablagen Server";
+            this.ResumeLayout(false);
+
         }
 
         #endregion
+
+        private System.Windows.Forms.Button distributeFileButton;
     }
 }
 

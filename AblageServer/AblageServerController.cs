@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -48,6 +49,17 @@ namespace AblageServer
             {
                 logger.Fatal("Error during server initialization", e);
                 throw e;
+            }
+        }
+
+        internal void DistributeFileToClients(string filePath)
+        {
+            List<AblagenClient> recipientClients = GetOtherOnlineClients(null);
+
+            DistributionRequestArgs distributionRequestArgs = new DistributionRequestArgs($"{filePath.Substring(filePath.LastIndexOf('\\') + 1)}", File.ReadAllBytes(filePath));
+            for (int i = 0; i < recipientClients.Count; i++)
+            {
+                recipientClients[i].HandleDistributionRequest(distributionRequestArgs);
             }
         }
 
@@ -173,14 +185,9 @@ namespace AblageServer
         {
             List<AblagenClient> recipientClients = GetOtherOnlineClients(sendingClient);
 
-
             for (int i = 0; i < recipientClients.Count; i++)
             {
-
-                //pendingServerDownloads.Add(new Tuple<string, byte[]>(tcpClients[i].Client.LocalEndPoint.ToString().Replace(controlPort.ToString(), dataPort.ToString()), bufferedFile));
-                int index = i;
                 recipientClients[i].HandleDistributionRequest(distributionRequestArgs);
-
             }
         }
 

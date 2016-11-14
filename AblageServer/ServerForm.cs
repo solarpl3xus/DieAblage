@@ -26,5 +26,14 @@ namespace AblageServer
             ablageServerController.ShutdownConnections();
             base.OnClosing(e);
         }
+
+        private void OnDistributeFileButtonClick(object sender, EventArgs e)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            if (openFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                ablageServerController.DistributeFileToClients(openFileDialog.FileName);
+            }
+        }
     }
 }
