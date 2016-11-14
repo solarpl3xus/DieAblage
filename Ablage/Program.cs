@@ -10,7 +10,6 @@ namespace Ablage
     {
         // encryption        
         // GUI
-        //  see whos online
         //  progress bar for file transfer
         // notification for download
 
@@ -23,8 +22,8 @@ namespace Ablage
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            AblagenController ablagenController = new AblagenController();
-            Application.Run(new MainForm(ablagenController));
+            
+            Application.Run(new MainForm());
         }
     }
 }

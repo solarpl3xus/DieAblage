@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Configuration;
 using System.IO;
+using System.Linq;
 
 namespace Ablage
 {
@@ -12,23 +13,27 @@ namespace Ablage
         public static int HostControlPort { get; private set; }
         public static string OutputPath { get; private set; }
 
+        const string nameFileName = "name";
+
         internal static void SetupConfiguration()
         {
             HostIp = ConfigurationManager.AppSettings["HostIp"];
             HostControlPort = int.Parse(ConfigurationManager.AppSettings["HostControlPort"]);
-            HostDataPort = int.Parse(ConfigurationManager.AppSettings["HostDataPort"]);
-            ClientName = ConfigurationManager.AppSettings["Name"];
+            HostDataPort = int.Parse(ConfigurationManager.AppSettings["HostDataPort"]);            
             OutputPath = ConfigurationManager.AppSettings["OutputPath"];
 
             SetupOutputPath();
+            TryGetName();
         }
-
+        
         private static void SetupOutputPath()
         {
             string path = OutputPath;
             OutputPath = AddSlashToPathIfNeeded(OutputPath);
             CreateFolderIfNotExists(OutputPath);
         }
+
+        
 
         private static string AddSlashToPathIfNeeded(string outputPath)
         {
@@ -55,5 +60,21 @@ namespace Ablage
             }
         }
         
+        private static void TryGetName()
+        {            
+            if (File.Exists(nameFileName))
+            {
+                ClientName =  File.ReadAllLines(nameFileName).FirstOrDefault();
+            }
+        }
+
+        internal static void SaveName(string name)
+        {
+            ClientName = name;
+            File.Create(nameFileName).Close();
+            File.WriteAllText(nameFileName, ClientName);
+        }
+
+
     }
 }

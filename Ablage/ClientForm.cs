@@ -9,23 +9,25 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO;
 using System.Threading;
+using AblageClient;
 
 namespace Ablage
 {
     partial class MainForm : Form
     {
+        private static log4net.ILog logger = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         private AblagenController controller;
 
         private List<string> onlineClients;
 
-        public MainForm(AblagenController ablagenController)
+        public MainForm()
         {
             onlineClients = new List<string>();
             InitializeComponent();
             onlineClientsBox.DataSource = onlineClients;
             
-            controller = ablagenController;
-            controller.Form = this;
+            controller = new AblagenController(this);             
             controller.Start();
         }
 
@@ -36,6 +38,17 @@ namespace Ablage
             {
                 controller.SendFileToServer(openFileDialog.FileName);
             }
+        }
+
+        internal string PromptForName()
+        {
+            string name = Prompt.ShowDialog("Enter your name", "caption");
+            if (string.IsNullOrEmpty(name))
+            {
+                logger.Fatal("No name entered, closing");
+                Environment.Exit(4919);
+            }
+            return name;
         }
 
         internal void ShowBalloonMessage(string balloonMessage)
@@ -79,6 +92,15 @@ namespace Ablage
                 onlineClients = nList;
 
             }));
+        }
+
+        protected override void OnClosing(CancelEventArgs e)
+        {
+            if (controller != null)
+            {                
+                controller.Shutdown();
+            }
+            base.OnClosing(e);
         }
     }
 }

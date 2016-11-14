@@ -26,6 +26,7 @@ namespace Ablage
 
         private Thread receiverThread;
 
+        private bool running = true;
 
         private TcpClient hostControlClient;
         private NetworkStream hostControlStream;
@@ -40,9 +41,20 @@ namespace Ablage
         public AblagenController()
         {
             AblagenConfiguration.SetupConfiguration();
-
             pendingFile = new List<string>();
         }
+
+        public AblagenController(MainForm mainForm) : this()
+        {
+            Form = mainForm;
+            
+            if (string.IsNullOrEmpty(AblagenConfiguration.ClientName))
+            {
+                string name = Form.PromptForName();
+                AblagenConfiguration.SaveName(name);
+            }
+        }
+
 
         public void Start()
         {
@@ -158,13 +170,19 @@ namespace Ablage
             }
             catch (Exception e)
             {
-            //2016 - 11 - 13 20:15:23,106[11] FATAL Ablage.AblagenController[(null)] - System.IO.IOException: Von der Übertragungsverbindung können keine Daten gelesen werden: Eine vorhandene Verbindung wurde vom Remotehost geschlossen. --->System.Net.Sockets.SocketException: Eine vorhandene Verbindung wurde vom Remotehost geschlossen
-                logger.Error("Exception during message processing", e);                
+                //2016 - 11 - 13 20:15:23,106[11] FATAL Ablage.AblagenController[(null)] - System.IO.IOException: Von der Übertragungsverbindung können keine Daten gelesen werden: Eine vorhandene Verbindung wurde vom Remotehost geschlossen. --->System.Net.Sockets.SocketException: Eine vorhandene Verbindung wurde vom Remotehost geschlossen
+                if (running)
+                {
+                    logger.Error("Exception during message processing", e);
+                }
             }
             finally
             {
                 Disconnect();
-                new Thread(Start).Start();
+                if (running)
+                {
+                    new Thread(Start).Start();
+                }
             }
         }
 
@@ -260,7 +278,6 @@ namespace Ablage
 
                     int bytesRead;
                     var buffer = new byte[1024];
-                    // read the file in chunks of 1KB
                     while ((bytesRead = hostDataStream.Read(buffer, 0, buffer.Length)) > 0)
                     {
                         output.Write(buffer, 0, bytesRead);
@@ -312,6 +329,13 @@ namespace Ablage
         {
             string clientName = message.Substring(1);
             Form.DeregisterOnlineClient(clientName);
+        }
+
+        internal void Shutdown()
+        {
+            running = false;
+            receiverThread.Abort();
+            Disconnect();
         }
     }
 }
