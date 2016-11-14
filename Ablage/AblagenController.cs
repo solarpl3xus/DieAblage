@@ -284,6 +284,11 @@ namespace Ablage
                     }
 
                     hostDataClient.Close();
+
+                    if (AblagenConfiguration.OpenFileAutomatically(completePath))
+                    {
+                        System.Diagnostics.Process.Start(completePath); 
+                    }
                 }
             }
             catch (Exception e)

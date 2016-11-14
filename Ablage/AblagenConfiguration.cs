@@ -14,18 +14,19 @@ namespace Ablage
         public static string OutputPath { get; private set; }
 
         const string nameFileName = "name";
+        private static string[] fileExtensionsToOpen;
 
         internal static void SetupConfiguration()
         {
             HostIp = ConfigurationManager.AppSettings["HostIp"];
             HostControlPort = int.Parse(ConfigurationManager.AppSettings["HostControlPort"]);
-            HostDataPort = int.Parse(ConfigurationManager.AppSettings["HostDataPort"]);            
+            HostDataPort = int.Parse(ConfigurationManager.AppSettings["HostDataPort"]);
             OutputPath = ConfigurationManager.AppSettings["OutputPath"];
-
+            fileExtensionsToOpen = ConfigurationManager.AppSettings["FileExtensionsToOpen"].Split(';').Select(k => k.ToUpper()).ToArray();
             SetupOutputPath();
             TryGetName();
         }
-        
+
         private static void SetupOutputPath()
         {
             string path = OutputPath;
@@ -33,7 +34,7 @@ namespace Ablage
             CreateFolderIfNotExists(OutputPath);
         }
 
-        
+
 
         private static string AddSlashToPathIfNeeded(string outputPath)
         {
@@ -59,12 +60,12 @@ namespace Ablage
                 }
             }
         }
-        
+
         private static void TryGetName()
-        {            
+        {
             if (File.Exists(nameFileName))
             {
-                ClientName =  File.ReadAllLines(nameFileName).FirstOrDefault();
+                ClientName = File.ReadAllLines(nameFileName).FirstOrDefault();
             }
         }
 
@@ -75,6 +76,20 @@ namespace Ablage
             File.WriteAllText(nameFileName, ClientName);
         }
 
+        internal static bool OpenFileAutomatically(string filePath)
+        {
+            if (filePath.Contains('.'))
+            {
+                int indexOfExtension = filePath.LastIndexOf('.');
+                string extension = filePath.Substring(indexOfExtension + 1);
 
+                if (fileExtensionsToOpen.Contains(extension.ToUpper()))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 }
