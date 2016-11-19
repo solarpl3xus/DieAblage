@@ -20,7 +20,8 @@ namespace Ablage
         IncomingFileTransfer,
         OnlineNotification,
         OfflineNotification,
-        AcceptByteSend
+        AcceptByteSend,
+        WatchdogReply
     }
 
     internal class AblagenController
@@ -39,6 +40,8 @@ namespace Ablage
 
         private List<string> pendingFile;
         private List<byte[]> pendingBytes;
+        private Thread watchdogThread;
+        private bool connected;
 
         public MainForm Form { get; internal set; }
 
@@ -69,7 +72,7 @@ namespace Ablage
 
         private void ConnectToServer()
         {
-            bool connected = false;
+            connected = false;
             bool retry = false;
             int logEntries = 0;
 
@@ -105,8 +108,24 @@ namespace Ablage
 
         private void StartListenerThread()
         {
-            receiverThread = new Thread(new ThreadStart(Receive));
+            receiverThread = new Thread(new ThreadStart(ReceiveControlMessages));
             receiverThread.Start();
+
+            watchdogThread = new Thread(new ThreadStart(SendWatchdog));
+            watchdogThread.Start();
+        }
+
+        private void SendWatchdog()
+        {
+            Semaphore semaphore = new Semaphore(0, 1);
+            while (true)
+            {
+                semaphore.WaitOne(30000);
+                if (connected)
+                {
+                    SendControlMessage("PING"); 
+                }
+            }
         }
 
         internal void Disconnect()
@@ -166,12 +185,12 @@ namespace Ablage
         {
             ASCIIEncoding encoder = new ASCIIEncoding();
             byte[] buffer = encoder.GetBytes(message);
-
+            logger.Info($"<{message}");
             hostControlStream.Write(Encoding.ASCII.GetBytes(message), 0, message.Length);
         }
 
 
-        private void Receive()
+        private void ReceiveControlMessages()
         {
             try
             {
@@ -244,6 +263,10 @@ namespace Ablage
                 logger.Debug("Host shutdown");
                 messageType = MessageType.ServerShutdown;
             }
+            else if (message.StartsWith("PONG"))
+            {
+                messageType = MessageType.WatchdogReply;
+            }
             else if (message == "OK")
             {
                 messageType = MessageType.AcceptFileSend;
@@ -314,11 +337,8 @@ namespace Ablage
 
             hostDataClient.GetStream().Close();
             hostDataClient.Close();
-            pendingBytes.RemoveAt(0);
-
-            hostControlStream.Write(Encoding.ASCII.GetBytes("DISTRIBUTE"), 0, "DISTRIBUTE".Length);
+            pendingBytes.RemoveAt(0);            
         }
-
 
 
         private void HandleIncomingFileTransfer(string message)

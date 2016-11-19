@@ -13,7 +13,8 @@ namespace AblageServer
         Disconnect,
         FileUpload,
         Unknown,
-        ByteArrayUpload
+        ByteArrayUpload,
+        WatchdogRequest
     }
 
     public class AblagenClient
@@ -96,6 +97,9 @@ namespace AblageServer
                             case MessageType.ByteArrayUpload:
                                 HandleByteUploadRequest(message);
                                 break;
+                            case MessageType.WatchdogRequest:
+                                HandleWatchdogRequest(message);
+                                break;
                             case MessageType.Unknown:
                                 logger.Debug("Unknown Message received, discarding");
                                 break;
@@ -126,17 +130,6 @@ namespace AblageServer
             }
         }
 
-        private void HandleByteUploadRequest(string message)
-        {
-            string fileName = message.Substring(2);
-
-            pendingUploads.Add(fileName);
-
-            logger.Info($"Request to receive {fileName} from {Name}");
-            SendControlMessage($"OK!{fileName}");
-            logger.Info("Confirmed request");
-        }
-
 
         private MessageType ReceiveControlMessage(out string message)
         {
@@ -146,11 +139,9 @@ namespace AblageServer
             byte[] rawMessage = new byte[bufferSize];
             int bytesRead;
 
-
-
             bytesRead = controlStream.Read(rawMessage, 0, bufferSize);
             message = Encoding.ASCII.GetString(rawMessage).Substring(0, bytesRead);
-            logger.Info($"> {message}");
+            logger.Info($"{Name} > {message}");
             if (bytesRead == 0)
             {
                 logger.Debug(Name + " says: client disconnected");
@@ -164,6 +155,10 @@ namespace AblageServer
             {
                 messageType = MessageType.FileUpload;
             }
+            else if (message == "PING")
+            {
+                messageType = MessageType.WatchdogRequest;
+            }
             else
             {
                 messageType = MessageType.Unknown;
@@ -171,6 +166,25 @@ namespace AblageServer
 
             return messageType;
         }
+
+
+        private void HandleWatchdogRequest(string message)
+        {
+            SendControlMessage("PONG");
+        }
+
+
+        private void HandleByteUploadRequest(string message)
+        {
+            string fileName = message.Substring(2);
+
+            pendingUploads.Add(fileName);
+
+            logger.Info($"Request to receive {fileName} from {Name}");
+            SendControlMessage($"OK!{fileName}");
+            logger.Info("Confirmed request");
+        }
+
 
         private void HandleFileUploadRequest(string message)
         {

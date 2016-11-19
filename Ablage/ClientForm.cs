@@ -10,6 +10,7 @@ using System.Windows.Forms;
 using System.IO;
 using System.Threading;
 using AblageClient;
+using System.Windows;
 
 namespace Ablage
 {
@@ -26,13 +27,13 @@ namespace Ablage
             onlineClients = new List<string>();
             InitializeComponent();
             onlineClientsBox.DataSource = onlineClients;
-            
-            controller = new AblagenController(this);             
+
+            controller = new AblagenController(this);
             controller.Start();
         }
 
         private void OnSendFileButtonClick(object sender, EventArgs e)
-        {            
+        {
             OpenFileDialog openFileDialog = new OpenFileDialog();
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
@@ -68,15 +69,15 @@ namespace Ablage
         {
             List<string> nList = new List<string>();
 
-             Invoke((MethodInvoker)(() =>
-             {
-                 nList.AddRange(onlineClients);
-                 nList.Add(clientName);
+            Invoke((MethodInvoker)(() =>
+            {
+                nList.AddRange(onlineClients);
+                nList.Add(clientName);
 
-                 onlineClientsBox.DataSource = nList;
-                 onlineClients = nList;
+                onlineClientsBox.DataSource = nList;
+                onlineClients = nList;
 
-             }));
+            }));
         }
 
         internal void DeregisterOnlineClient(string clientName)
@@ -106,7 +107,7 @@ namespace Ablage
         protected override void OnClosing(CancelEventArgs e)
         {
             if (controller != null)
-            {                
+            {
                 controller.Shutdown();
             }
             base.OnClosing(e);
