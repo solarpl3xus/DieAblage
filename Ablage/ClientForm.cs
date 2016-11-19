@@ -14,7 +14,7 @@ using System.Windows;
 
 namespace Ablage
 {
-    partial class MainForm : Form
+    partial class ClientForm : Form
     {
         private static log4net.ILog logger = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
@@ -22,7 +22,7 @@ namespace Ablage
 
         private List<string> onlineClients;
 
-        public MainForm()
+        public ClientForm()
         {
             onlineClients = new List<string>();
             InitializeComponent();
@@ -111,6 +111,22 @@ namespace Ablage
                 controller.Shutdown();
             }
             base.OnClosing(e);
+        }
+
+        internal void ReportUploadProgess(int progress)
+        {
+            Invoke((MethodInvoker)(() =>
+            {
+                uploadProgressBar.Value = progress; 
+            }));
+        }
+
+        internal void ReportDownloadProgess(int progress)
+        {
+            Invoke((MethodInvoker)(() =>
+            {
+                downloadProgressBar.Value = progress;
+            }));
         }
     }
 }

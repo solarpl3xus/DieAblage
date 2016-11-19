@@ -43,7 +43,7 @@ namespace Ablage
         private Thread watchdogThread;
         private bool connected;
 
-        public MainForm Form { get; internal set; }
+        public ClientForm Form { get; internal set; }
 
         public AblagenController()
         {
@@ -52,7 +52,7 @@ namespace Ablage
             pendingBytes = new List<byte[]>();
         }
 
-        public AblagenController(MainForm mainForm) : this()
+        public AblagenController(ClientForm mainForm) : this()
         {
             Form = mainForm;
 
@@ -123,7 +123,7 @@ namespace Ablage
                 semaphore.WaitOne(30000);
                 if (connected)
                 {
-                    SendControlMessage("PING"); 
+                    SendControlMessage("PING");
                 }
             }
         }
@@ -301,53 +301,56 @@ namespace Ablage
             logger.Info($"Server confirmed request to send file");
 
             string fileName = pendingFile.First();
+            byte[] fileBytes = File.ReadAllBytes(fileName);
+            UploadBytes(fileBytes);
 
+            logger.Info($"Sent {fileName} to Server");
+
+            pendingFile.Remove(fileName);
+        }
+
+        private void UploadBytes(byte[] fileBytes)
+        {
             if (hostDataClient == null || !hostDataClient.Connected)
             {
                 hostDataClient = new TcpClient(AblagenConfiguration.HostIp, AblagenConfiguration.HostDataPort);
             }
 
-            byte[] fileBytes = File.ReadAllBytes(fileName);
-            hostDataClient.GetStream().Write(fileBytes, 0, fileBytes.Length);
-
-            logger.Info($"Sent {fileName} to Server");
+            for (int offset = 0; offset < fileBytes.Length; offset += 1024)
+            {
+                int size = Math.Min(1024, fileBytes.Length - offset);
+                hostDataClient.GetStream().Write(fileBytes, offset, size);
+                Form.ReportUploadProgess(offset * 100 / fileBytes.Length);
+            }
+            Form.ReportUploadProgess(100);
 
             hostDataClient.GetStream().Close();
             hostDataClient.Close();
-            pendingFile.Remove(fileName);
-
-            hostControlStream.Write(Encoding.ASCII.GetBytes("DISTRIBUTE"), 0, "DISTRIBUTE".Length);
         }
-
 
         private void HandleByteUpload(string message)
         {
             logger.Info($"Server confirmed request to send file");
 
-
-            if (hostDataClient == null || !hostDataClient.Connected)
-            {
-                hostDataClient = new TcpClient(AblagenConfiguration.HostIp, AblagenConfiguration.HostDataPort);
-            }
-
             byte[] bytes = pendingBytes.First();
-            hostDataClient.GetStream().Write(bytes, 0, bytes.Length);
+
+            UploadBytes(bytes);
 
             logger.Info($"Sent bytes to Server");
 
-            hostDataClient.GetStream().Close();
-            hostDataClient.Close();
-            pendingBytes.RemoveAt(0);            
+            pendingBytes.RemoveAt(0);
         }
 
 
         private void HandleIncomingFileTransfer(string message)
         {
-            string fileName = message.Substring(1);
-            ReceiveFile(fileName);
+            string[] messageFields = message.Split('|');
+            string fileName = messageFields[0].Substring(1);
+            int size = int.Parse(messageFields[1]);
+            ReceiveFile(fileName, size);
         }
 
-        private void ReceiveFile(string fileName)
+        private void ReceiveFile(string fileName, int size)
         {
             string completePath = AdjustFilePathIfAlreadyExists(fileName);
 
@@ -364,12 +367,18 @@ namespace Ablage
 
                     NetworkStream hostDataStream = hostDataClient.GetStream();
 
+                    int totalByteRead = 0;
                     int bytesRead;
                     var buffer = new byte[1024];
                     while ((bytesRead = hostDataStream.Read(buffer, 0, buffer.Length)) > 0)
                     {
                         output.Write(buffer, 0, bytesRead);
+
+                        totalByteRead += bytesRead;
+
+                        Form.ReportDownloadProgess(totalByteRead * 100 / size);
                     }
+                    Form.ReportDownloadProgess(100);
 
                     hostDataClient.Close();
 
@@ -428,6 +437,7 @@ namespace Ablage
         {
             running = false;
             receiverThread.Abort();
+            watchdogThread.Abort();
             Disconnect();
         }
     }

@@ -10,7 +10,6 @@ namespace Ablage
     {
         // encryption        
         // GUI
-        //  progress bar for file transfer
         // notification for download
 
         /// <summary>
@@ -23,7 +22,7 @@ namespace Ablage
             Application.SetCompatibleTextRenderingDefault(false);
 
             
-            Application.Run(new MainForm());
+            Application.Run(new ClientForm());
         }
     }
 }

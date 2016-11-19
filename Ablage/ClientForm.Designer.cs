@@ -1,6 +1,6 @@
 ﻿namespace Ablage
 {
-    partial class MainForm
+    partial class ClientForm
     {
         /// <summary>
         /// Required designer variable.
@@ -32,7 +32,12 @@
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.onlineClientsBox = new System.Windows.Forms.ListBox();
             this.splitContainer2 = new System.Windows.Forms.SplitContainer();
-            this.scrollableControl1 = new System.Windows.Forms.ScrollableControl();
+            this.splitContainer3 = new System.Windows.Forms.SplitContainer();
+            this.uploadProgressBar = new System.Windows.Forms.ProgressBar();
+            this.uploadLabel = new System.Windows.Forms.Label();
+            this.splitContainer4 = new System.Windows.Forms.SplitContainer();
+            this.downloadProgressBar = new System.Windows.Forms.ProgressBar();
+            this.downloadLabel = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
@@ -41,6 +46,13 @@
             this.splitContainer2.Panel1.SuspendLayout();
             this.splitContainer2.Panel2.SuspendLayout();
             this.splitContainer2.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainer3)).BeginInit();
+            this.splitContainer3.Panel1.SuspendLayout();
+            this.splitContainer3.Panel2.SuspendLayout();
+            this.splitContainer3.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainer4)).BeginInit();
+            this.splitContainer4.Panel1.SuspendLayout();
+            this.splitContainer4.SuspendLayout();
             this.SuspendLayout();
             // 
             // sendFileButton
@@ -91,7 +103,7 @@
             // 
             // splitContainer2.Panel1
             // 
-            this.splitContainer2.Panel1.Controls.Add(this.scrollableControl1);
+            this.splitContainer2.Panel1.Controls.Add(this.splitContainer3);
             // 
             // splitContainer2.Panel2
             // 
@@ -100,14 +112,75 @@
             this.splitContainer2.SplitterDistance = 241;
             this.splitContainer2.TabIndex = 1;
             // 
-            // scrollableControl1
+            // splitContainer3
             // 
-            this.scrollableControl1.Dock = System.Windows.Forms.DockStyle.Top;
-            this.scrollableControl1.Location = new System.Drawing.Point(0, 0);
-            this.scrollableControl1.Name = "scrollableControl1";
-            this.scrollableControl1.Size = new System.Drawing.Size(320, 103);
-            this.scrollableControl1.TabIndex = 0;
-            this.scrollableControl1.Text = "scrollableControl1";
+            this.splitContainer3.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.splitContainer3.Location = new System.Drawing.Point(0, 0);
+            this.splitContainer3.Name = "splitContainer3";
+            this.splitContainer3.Orientation = System.Windows.Forms.Orientation.Horizontal;
+            // 
+            // splitContainer3.Panel1
+            // 
+            this.splitContainer3.Panel1.Controls.Add(this.uploadLabel);
+            this.splitContainer3.Panel1.Controls.Add(this.uploadProgressBar);
+            // 
+            // splitContainer3.Panel2
+            // 
+            this.splitContainer3.Panel2.Controls.Add(this.splitContainer4);
+            this.splitContainer3.Size = new System.Drawing.Size(320, 241);
+            this.splitContainer3.SplitterDistance = 44;
+            this.splitContainer3.TabIndex = 1;
+            // 
+            // uploadProgressBar
+            // 
+            this.uploadProgressBar.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.uploadProgressBar.Location = new System.Drawing.Point(0, 16);
+            this.uploadProgressBar.Name = "uploadProgressBar";
+            this.uploadProgressBar.Size = new System.Drawing.Size(320, 28);
+            this.uploadProgressBar.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
+            this.uploadProgressBar.TabIndex = 0;
+            // 
+            // uploadLabel
+            // 
+            this.uploadLabel.AutoSize = true;
+            this.uploadLabel.Location = new System.Drawing.Point(3, -1);
+            this.uploadLabel.Name = "uploadLabel";
+            this.uploadLabel.Size = new System.Drawing.Size(41, 13);
+            this.uploadLabel.TabIndex = 1;
+            this.uploadLabel.Text = "Upload";
+            // 
+            // splitContainer4
+            // 
+            this.splitContainer4.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.splitContainer4.Location = new System.Drawing.Point(0, 0);
+            this.splitContainer4.Name = "splitContainer4";
+            this.splitContainer4.Orientation = System.Windows.Forms.Orientation.Horizontal;
+            // 
+            // splitContainer4.Panel1
+            // 
+            this.splitContainer4.Panel1.Controls.Add(this.downloadLabel);
+            this.splitContainer4.Panel1.Controls.Add(this.downloadProgressBar);
+            this.splitContainer4.Size = new System.Drawing.Size(320, 193);
+            this.splitContainer4.SplitterDistance = 53;
+            this.splitContainer4.TabIndex = 0;
+            // 
+            // downloadProgressBar
+            // 
+            this.downloadProgressBar.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.downloadProgressBar.Location = new System.Drawing.Point(0, 25);
+            this.downloadProgressBar.Name = "downloadProgressBar";
+            this.downloadProgressBar.Size = new System.Drawing.Size(320, 28);
+            this.downloadProgressBar.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
+            this.downloadProgressBar.TabIndex = 1;
+            // 
+            // downloadLabel
+            // 
+            this.downloadLabel.AutoSize = true;
+            this.downloadLabel.Location = new System.Drawing.Point(3, 9);
+            this.downloadLabel.Name = "downloadLabel";
+            this.downloadLabel.Size = new System.Drawing.Size(55, 13);
+            this.downloadLabel.TabIndex = 2;
+            this.downloadLabel.Text = "Download";
             // 
             // MainForm
             // 
@@ -126,6 +199,15 @@
             this.splitContainer2.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer2)).EndInit();
             this.splitContainer2.ResumeLayout(false);
+            this.splitContainer3.Panel1.ResumeLayout(false);
+            this.splitContainer3.Panel1.PerformLayout();
+            this.splitContainer3.Panel2.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainer3)).EndInit();
+            this.splitContainer3.ResumeLayout(false);
+            this.splitContainer4.Panel1.ResumeLayout(false);
+            this.splitContainer4.Panel1.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainer4)).EndInit();
+            this.splitContainer4.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -136,7 +218,12 @@
         private System.Windows.Forms.SplitContainer splitContainer1;
         private System.Windows.Forms.ListBox onlineClientsBox;
         private System.Windows.Forms.SplitContainer splitContainer2;
-        private System.Windows.Forms.ScrollableControl scrollableControl1;
+        private System.Windows.Forms.SplitContainer splitContainer3;
+        private System.Windows.Forms.ProgressBar uploadProgressBar;
+        private System.Windows.Forms.Label uploadLabel;
+        private System.Windows.Forms.SplitContainer splitContainer4;
+        private System.Windows.Forms.Label downloadLabel;
+        private System.Windows.Forms.ProgressBar downloadProgressBar;
     }
 }
 

@@ -272,7 +272,7 @@ namespace AblageServer
                 try
                 {
                     pendingDownloads.Add(distributionRequestArgs.FileBytes);
-                    SendControlMessage($">{distributionRequestArgs.FileName}");
+                    SendControlMessage($">{distributionRequestArgs.FileName}|{distributionRequestArgs.FileBytes.Length}");
                 }
                 catch (Exception e)
                 {
