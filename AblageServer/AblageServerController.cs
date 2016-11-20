@@ -208,9 +208,13 @@ namespace AblageServer
 
 
 
-        internal void ShutdownConnections()
+        public void ShutdownConnections()
         {
-            // throw new NotImplementedException();
+            tcpControlListener.Stop();
+            controlListenThread.Abort();
+
+            tcpDataListener.Stop();
+            dataListenThread.Abort();
         }
     }
 }
