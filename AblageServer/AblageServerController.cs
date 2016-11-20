@@ -104,6 +104,10 @@ namespace AblageServer
                 {
                     tryAgain = true;
                 }
+                catch(ThreadAbortException)
+                {
+
+                }
                 catch (Exception e)
                 {
                     logger.Fatal("Error during server initialization", e);
@@ -148,6 +152,10 @@ namespace AblageServer
                 catch (SocketException)
                 {
                     tryAgain = true;
+                }
+                catch (ThreadAbortException)
+                {
+
                 }
                 catch (Exception e)
                 {
@@ -215,6 +223,19 @@ namespace AblageServer
 
             tcpDataListener.Stop();
             dataListenThread.Abort();
+
+            List<AblagenClient> clientsToShutdown = GetOtherOnlineClients(null);
+            for (int i = 0; i < clientsToShutdown.Count; i++)
+            {
+                try
+                {
+                    clientsToShutdown[i].StopCommunication();
+                }
+                catch (Exception e)
+                {
+                    logger.Error("Exception during client shutdown");                    
+                }
+            }
         }
     }
 }

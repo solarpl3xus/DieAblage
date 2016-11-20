@@ -96,6 +96,8 @@ namespace Ablage
                     logEntries++;
                     retry = true;
                 }
+
+                Form.DisplayIsConnected(connected);
             }
 
             hostControlStream = hostControlClient.GetStream();

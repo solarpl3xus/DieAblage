@@ -54,6 +54,11 @@ namespace AblageServer
             controlCommunicationThread.Start();
         }
 
+        internal void StopCommunication()
+        {            
+            controlCommunicationThread.Abort();
+        }
+
         private void HandleControlCommunication()
         {
             controlStream = controlClient.GetStream();

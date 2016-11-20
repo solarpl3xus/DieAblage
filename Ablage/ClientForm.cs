@@ -21,6 +21,7 @@ namespace Ablage
         private AblagenController controller;
 
         private List<string> onlineClients;
+        private bool started;
 
         public ClientForm()
         {
@@ -28,9 +29,16 @@ namespace Ablage
             InitializeComponent();
             onlineClientsBox.DataSource = onlineClients;
 
+            serverStatussplitContainer.Panel2Collapsed = true;
+
             controller = new AblagenController(this);
-            controller.Start();
+
+            new Thread(() =>
+            {
+                controller.Start();
+            }).Start();
         }
+        
 
         private void OnSendFileButtonClick(object sender, EventArgs e)
         {
@@ -95,6 +103,24 @@ namespace Ablage
             }));
         }
 
+        protected override void OnShown(EventArgs e)
+        {
+            base.OnShown(e);
+            started = true;
+        }
+
+        internal void DisplayIsConnected(bool connected)
+        {
+            if (started)
+            {
+                Invoke((MethodInvoker)(() =>
+                    {
+                        serverStatussplitContainer.Panel1Collapsed = !connected;
+                        serverStatussplitContainer.Panel2Collapsed = connected;
+                    }));
+            }
+        }
+
         protected override void OnKeyDown(KeyEventArgs e)
         {
             if (e.KeyCode == Keys.V && e.Modifiers == Keys.Control)
@@ -104,11 +130,19 @@ namespace Ablage
             base.OnKeyDown(e);
         }
 
+
         protected override void OnClosing(CancelEventArgs e)
         {
             if (controller != null)
             {
-                controller.Shutdown();
+                try
+                {
+                    controller.Shutdown();
+                }
+                catch (Exception ex)
+                {
+                    logger.Error("Exception during shutdown,", ex);
+                }
             }
             base.OnClosing(e);
         }
@@ -117,7 +151,7 @@ namespace Ablage
         {
             Invoke((MethodInvoker)(() =>
             {
-                uploadProgressBar.Value = progress; 
+                uploadProgressBar.Value = progress;
             }));
         }
 
@@ -128,5 +162,7 @@ namespace Ablage
                 downloadProgressBar.Value = progress;
             }));
         }
+
+
     }
 }
