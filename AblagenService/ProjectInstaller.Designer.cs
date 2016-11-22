@@ -33,7 +33,6 @@
             // 
             // serviceProcessInstaller1
             // 
-            this.serviceProcessInstaller1.Account = System.ServiceProcess.ServiceAccount.LocalSystem;
             this.serviceProcessInstaller1.Password = null;
             this.serviceProcessInstaller1.Username = null;
             // 
@@ -53,6 +52,6 @@
 
         #endregion
         public System.ServiceProcess.ServiceInstaller NewAblagenService;
-        protected System.ServiceProcess.ServiceProcessInstaller serviceProcessInstaller1;
+        public System.ServiceProcess.ServiceProcessInstaller serviceProcessInstaller1;
     }
 }

@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading;
 using System.Windows.Forms;
 using System.Drawing;
+using AblageClient;
 
 namespace Ablage
 {
@@ -24,7 +25,7 @@ namespace Ablage
         WatchdogReply
     }
 
-    internal class AblagenController
+    public class AblagenController
     {
         private static log4net.ILog logger = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
@@ -43,7 +44,7 @@ namespace Ablage
         private Thread watchdogThread;
         private bool connected;
 
-        public ClientForm Form { get; internal set; }
+        public IClientForm Form { get; internal set; }
 
         public AblagenController()
         {
@@ -52,7 +53,7 @@ namespace Ablage
             pendingBytes = new List<byte[]>();
         }
 
-        public AblagenController(ClientForm mainForm) : this()
+        public AblagenController(IClientForm mainForm) : this()
         {
             Form = mainForm;
 
@@ -113,8 +114,11 @@ namespace Ablage
             receiverThread = new Thread(new ThreadStart(ReceiveControlMessages));
             receiverThread.Start();
 
-            watchdogThread = new Thread(new ThreadStart(SendWatchdog));
-            watchdogThread.Start();
+            if (watchdogThread == null || !watchdogThread.IsAlive)
+            {
+                watchdogThread = new Thread(new ThreadStart(SendWatchdog));
+                watchdogThread.Start();
+            }
         }
 
         private void SendWatchdog()
@@ -132,11 +136,11 @@ namespace Ablage
 
         internal void Disconnect()
         {
-            hostControlStream.Close();
-            hostControlClient.Close();
+            hostControlStream?.Close();
+            hostControlClient?.Close();
         }
 
-        internal void HandlePaste()
+        public void HandlePaste()
         {
             if (Clipboard.ContainsFileDropList())
             {
@@ -169,7 +173,7 @@ namespace Ablage
             ).Start();
         }
 
-        internal void SendFileToServer(string filePath)
+        public void SendFileToServer(string filePath)
         {
             new Thread(() =>
             {
@@ -384,11 +388,14 @@ namespace Ablage
 
                     hostDataClient.Close();
 
-                    if (AblagenConfiguration.OpenFileAutomatically(completePath))
-                    {
-                        System.Diagnostics.Process.Start(completePath);
-                    }
+
+                    /*   if (AblagenConfiguration.OpenFileAutomatically(completePath))
+                       {
+                           //System.Diagnostics.Process.Start(completePath);
+
+                       }*/
                 }
+                Form.HandleFileDownloadCompleted(completePath);
             }
             catch (Exception e)
             {
@@ -435,11 +442,11 @@ namespace Ablage
             Form.DeregisterOnlineClient(clientName);
         }
 
-        internal void Shutdown()
+        public void Shutdown()
         {
             running = false;
-            receiverThread.Abort();
-            watchdogThread.Abort();
+            receiverThread?.Abort();
+            watchdogThread?.Abort();
             Disconnect();
         }
     }

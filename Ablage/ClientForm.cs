@@ -14,7 +14,7 @@ using System.Windows;
 
 namespace Ablage
 {
-    partial class ClientForm : Form
+    partial class ClientForm : Form, IClientForm
     {
         private static log4net.ILog logger = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
@@ -49,7 +49,7 @@ namespace Ablage
             }
         }
 
-        internal string PromptForName()
+        public string PromptForName()
         {
             string name = Prompt.ShowDialog("Enter your name", "caption");
             if (string.IsNullOrEmpty(name))
@@ -60,7 +60,7 @@ namespace Ablage
             return name;
         }
 
-        internal void ShowBalloonMessage(string balloonMessage)
+        public void ShowBalloonMessage(string balloonMessage)
         {
             NotifyIcon notifyIcon = new NotifyIcon();
             notifyIcon.Visible = true;
@@ -73,7 +73,7 @@ namespace Ablage
             notifyIcon.ShowBalloonTip(30000);
         }
 
-        internal void RegisterOnlineClient(string clientName)
+        public void RegisterOnlineClient(string clientName)
         {
             List<string> nList = new List<string>();
 
@@ -88,7 +88,7 @@ namespace Ablage
             }));
         }
 
-        internal void DeregisterOnlineClient(string clientName)
+        public void DeregisterOnlineClient(string clientName)
         {
             List<string> nList = new List<string>();
 
@@ -109,7 +109,7 @@ namespace Ablage
             started = true;
         }
 
-        internal void DisplayIsConnected(bool connected)
+        public void DisplayIsConnected(bool connected)
         {
             if (started)
             {
@@ -147,7 +147,7 @@ namespace Ablage
             base.OnClosing(e);
         }
 
-        internal void ReportUploadProgess(int progress)
+        public void ReportUploadProgess(int progress)
         {
             Invoke((MethodInvoker)(() =>
             {
@@ -155,7 +155,7 @@ namespace Ablage
             }));
         }
 
-        internal void ReportDownloadProgess(int progress)
+        public void ReportDownloadProgess(int progress)
         {
             Invoke((MethodInvoker)(() =>
             {
@@ -163,6 +163,12 @@ namespace Ablage
             }));
         }
 
-
+        public void HandleFileDownloadCompleted(string completePath)
+        {
+            if (AblagenConfiguration.IsImage(completePath))
+            {
+                System.Diagnostics.Process.Start(completePath);
+            }
+        }
     }
 }

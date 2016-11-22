@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Ablage
 {
-    internal static class AblagenConfiguration
+    public static class AblagenConfiguration
     {
         public static string ClientName { get; private set; }
         public static int HostDataPort { get; private set; }
@@ -76,7 +76,7 @@ namespace Ablage
             File.WriteAllText(nameFileName, ClientName);
         }
 
-        internal static bool OpenFileAutomatically(string filePath)
+        public static bool IsImage(string filePath)
         {
             if (filePath.Contains('.'))
             {

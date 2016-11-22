@@ -31,6 +31,7 @@
             // 
             // ServiceController
             // 
+            this.CanStop = false;
             this.ServiceName = "AblagenServer";
 
         }
