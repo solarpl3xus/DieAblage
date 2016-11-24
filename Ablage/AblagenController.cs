@@ -9,6 +9,7 @@ using System.Threading;
 using System.Windows.Forms;
 using System.Drawing;
 using AblageClient;
+using Crypto;
 
 namespace Ablage
 {
@@ -321,7 +322,7 @@ namespace Ablage
             {
                 hostDataClient = new TcpClient(AblagenConfiguration.HostIp, AblagenConfiguration.HostDataPort);
             }
-
+            fileBytes = Encryption.Encrypt(fileBytes, "kackbratze");
             for (int offset = 0; offset < fileBytes.Length; offset += 1024)
             {
                 int size = Math.Min(1024, fileBytes.Length - offset);
@@ -376,14 +377,16 @@ namespace Ablage
                     int totalByteRead = 0;
                     int bytesRead;
                     var buffer = new byte[1024];
+                    List<byte> byteCache = new List<byte>();
                     while ((bytesRead = hostDataStream.Read(buffer, 0, buffer.Length)) > 0)
                     {
-                        output.Write(buffer, 0, bytesRead);
-
+                        byteCache.AddRange(buffer);
                         totalByteRead += bytesRead;
 
                         Form.ReportDownloadProgess(totalByteRead * 100 / size);
                     }
+                    buffer = Encryption.Decrypt(byteCache.ToArray(), "kackbratze");
+                    output.Write(buffer, 0, totalByteRead);
                     Form.ReportDownloadProgess(100);
 
                     hostDataClient.Close();

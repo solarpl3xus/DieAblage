@@ -7,7 +7,7 @@ namespace Crypto
 {
     public class Encryption
     {
-        private byte[] AES_Encrypt(byte[] bytesToBeEncrypted, byte[] passwordBytes)
+        private static byte[] AES_Encrypt(byte[] bytesToBeEncrypted, byte[] passwordBytes)
         {
             byte[] encryptedBytes = null;
 
@@ -37,7 +37,7 @@ namespace Crypto
 
             return encryptedBytes;
         }
-        private byte[] AES_Decrypt(byte[] bytesToBeDecrypted, byte[] passwordBytes)
+        private static byte[] AES_Decrypt(byte[] bytesToBeDecrypted, byte[] passwordBytes)
         {
             byte[] decryptedBytes = null;
 
@@ -68,28 +68,23 @@ namespace Crypto
             return decryptedBytes;
         }
 
-        public void EncryptFile(string filename, string password)
+        public static byte[] Encrypt(byte[] bytesToBeEncrypted, string password)
         {
-            byte[] bytesToBeEncrypted = File.ReadAllBytes(filename);
             byte[] passwordBytes = Encoding.UTF8.GetBytes(password);
 
             passwordBytes = SHA256.Create().ComputeHash(passwordBytes);
 
             byte[] bytesEncrypted = AES_Encrypt(bytesToBeEncrypted, passwordBytes);
-
-            File.WriteAllBytes(filename + "_enc", bytesEncrypted);
+            return bytesEncrypted;
         }
 
-        public void DecryptFile(string filename, string password)
+        public static byte[] Decrypt(byte[] bytesToBeDecrypted, string password)
         {
-            byte[] bytesToBeDecrypted = File.ReadAllBytes(filename + "_enc");
             byte[] passwordBytes = Encoding.UTF8.GetBytes(password);
             passwordBytes = SHA256.Create().ComputeHash(passwordBytes);
 
             byte[] bytesDecrypted = AES_Decrypt(bytesToBeDecrypted, passwordBytes);
-
-            File.WriteAllBytes(filename, bytesDecrypted);
-            File.Delete(filename + "_enc");
+            return bytesDecrypted;
         }
     }
 }
