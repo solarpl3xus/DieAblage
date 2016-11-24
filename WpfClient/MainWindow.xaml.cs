@@ -15,6 +15,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.ComponentModel;
+using WpfApplication1.Controls;
 
 namespace WpfApplication1
 {
@@ -26,7 +27,7 @@ namespace WpfApplication1
         private static log4net.ILog logger = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         private AblagenController controller;
-        private bool started;
+        private bool started = false;
 
         public MainWindow()
         {
@@ -49,7 +50,6 @@ namespace WpfApplication1
             image.StretchDirection = StretchDirection.DownOnly;
             image.HorizontalAlignment = HorizontalAlignment.Left;
             // image.Width = source.Width;
-            panel.Children.Add(image);
 
 
             source = new BitmapImage(new Uri(@"D:\Bilder\RainbowScienceBARS.png"));
@@ -64,6 +64,11 @@ namespace WpfApplication1
             text.MouseDown += Text_MouseDown;
             panel.Children.Add(text);
             /**/
+
+            ChatText ct = new ChatText("Yung Lean", "Motorola");
+            ct.HorizontalAlignment = HorizontalAlignment.Left;
+            panel.Children.Add(ct);
+
 
         }
 
@@ -221,6 +226,26 @@ namespace WpfApplication1
             Environment.Exit(4919);
             base.OnClosing(e);
         }
-       
+
+        private void OnSendTextBoxKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Return)
+            {
+                if (!string.IsNullOrEmpty(sendTextBox.Text))
+                {
+                    controller.SendControlMessage($"!{sendTextBox.Text}");
+                }
+            }
+        }
+
+        public void DisplayChatMessage(string sender, string chatMessage)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                ChatText ct = new ChatText(sender, chatMessage);
+                ct.HorizontalAlignment = HorizontalAlignment.Left;
+                panel.Children.Add(ct);                
+            });
+        }
     }
 }

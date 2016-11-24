@@ -22,5 +22,6 @@ namespace AblageClient
 
         void ReportDownloadProgess(int progress);
         void HandleFileDownloadCompleted(string completePath);
+        void DisplayChatMessage(string sender, string chatMessage);
     }
 }

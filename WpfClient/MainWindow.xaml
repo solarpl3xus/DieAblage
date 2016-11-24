@@ -14,7 +14,7 @@
         <Label x:Name="uploadLabel" Content="Upload" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="16,104,0,0" Height="27" Width="68"/>
         <ProgressBar x:Name="uploadBar" HorizontalAlignment="Left" VerticalAlignment="Top" Height="15" Margin="10,131,0,0" Width="215"/>
 
-        <ScrollViewer x:Name="chatViewer" Margin="0,161,0,0" VerticalAlignment="Top"  >
+        <ScrollViewer x:Name="chatViewer" Margin="0,161,0,55" VerticalAlignment="Top"  >
             <StackPanel x:Name="panel" Margin="36,28,10,10" >
                 <StackPanel.Resources>
                     <Style TargetType="{x:Type Image}">
@@ -29,6 +29,10 @@
         <Label x:Name="hostConnectedLabel" Content="Could not connect to host" HorizontalAlignment="Center" Margin="0,-3,0,0" VerticalAlignment="Top" Width="517" HorizontalContentAlignment="Center" Background="Red" Foreground="White" FontWeight="Bold" Height="55"/>
         <ListBox x:Name="clientListBox" HorizontalAlignment="Left" Height="55" Margin="0,-3,0,0" VerticalAlignment="Top" Width="517"/>
         <Button x:Name="sendFileButton" Content="Send File" HorizontalAlignment="Left" Margin="255,71,0,0" VerticalAlignment="Top" Width="75" Click="OnSendFileButtonClick"/>
+        <TextBox x:Name="sendTextBox"  Height="23" Margin="10,0,10,10" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Bottom" KeyDown="OnSendTextBoxKeyDown">
+
+        </TextBox>
+            
 
 
 

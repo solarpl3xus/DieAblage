@@ -22,7 +22,8 @@ namespace Ablage
         OnlineNotification,
         OfflineNotification,
         AcceptByteSend,
-        WatchdogReply
+        WatchdogReply,
+        ChatMessage
     }
 
     public class AblagenController
@@ -187,7 +188,7 @@ namespace Ablage
         }
 
 
-        private void SendControlMessage(string message)
+        public void SendControlMessage(string message)
         {
             ASCIIEncoding encoder = new ASCIIEncoding();
             byte[] buffer = encoder.GetBytes(message);
@@ -226,6 +227,9 @@ namespace Ablage
                         case MessageType.OfflineNotification:
                             HandleOfflineNotification(message);
                             break;
+                        case MessageType.ChatMessage:
+                            ReceiveChatMessage(message);
+                            break;
                         case MessageType.Unknown:
                             logger.Debug("Unknow message type, discarding");
                             break;
@@ -252,6 +256,14 @@ namespace Ablage
             }
         }
 
+        private void ReceiveChatMessage(string message)
+        {
+            string messageData = message.Substring(1);
+            string[] dataArray = messageData.Split('|');
+            string sender = dataArray[0];
+            string chatMessage = dataArray[1];
+            Form.DisplayChatMessage(sender, chatMessage);
+        }
 
         private MessageType ReceiveControlMessage(out string message)
         {
@@ -292,6 +304,10 @@ namespace Ablage
             else if (message.StartsWith("-"))
             {
                 messageType = MessageType.OfflineNotification;
+            }
+            else if (message.StartsWith("!"))
+            {
+                messageType = MessageType.ChatMessage;
             }
             else
             {

@@ -60,9 +60,16 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Controls\ChatText.xaml.cs">
+      <DependentUpon>ChatText.xaml</DependentUpon>
+    </Compile>
     <Compile Include="StringInputDialog.xaml.cs">
       <DependentUpon>StringInputDialog.xaml</DependentUpon>
     </Compile>
+    <Page Include="Controls\ChatText.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

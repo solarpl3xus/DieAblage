@@ -170,5 +170,10 @@ namespace Ablage
                 System.Diagnostics.Process.Start(completePath);
             }
         }
+
+        public void DisplayChatMessage(string sender, string chatMessage)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
