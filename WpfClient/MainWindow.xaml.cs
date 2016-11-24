@@ -65,11 +65,11 @@ namespace WpfApplication1
             text.Text = @"https://www.youtube.com/watch?v=UWcBtHdPSKk";
             text.MouseDown += Text_MouseDown;
             panel.Children.Add(text);
-            /**/
 
             ChatText ct = new ChatText("Yung Lean", "Motorola");
             ct.HorizontalAlignment = HorizontalAlignment.Left;
             panel.Children.Add(ct);
+            /**/
 
 
         }
@@ -190,10 +190,13 @@ namespace WpfApplication1
         {
             if (AblagenConfiguration.IsImage(completePath))
             {
-                ImageSource source = new BitmapImage(new Uri(completePath));
-                Image image = new Image();
-                image.Source = source;
-                AddImageToChatStream(image);
+                Dispatcher.Invoke(() =>
+                {
+                    ImageSource source = new BitmapImage(new Uri(completePath));
+                    Image image = new Image();
+                    image.Source = source;
+                    AddImageToChatStream(image);
+                });
             }
             else
             {
