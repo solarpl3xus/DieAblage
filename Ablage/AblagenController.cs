@@ -404,7 +404,8 @@ namespace Ablage
 
                             Form.ReportDownloadProgess(totalByteRead * 100 / size);
                         }
-                        output.Write(Encryption.Decrypt(ms.ToArray(), "kackbratze"), 0, totalByteRead);
+                        byte[] byteCache = Encryption.Decrypt(ms.ToArray(), "kackbratze");
+                        output.Write(byteCache, 0, byteCache.Length);
                         Form.ReportDownloadProgess(100);
                     }
                     hostDataClient.Close();
