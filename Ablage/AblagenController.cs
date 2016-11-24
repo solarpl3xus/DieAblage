@@ -158,6 +158,8 @@ namespace Ablage
                 image.Save(ms, System.Drawing.Imaging.ImageFormat.Bmp);
                 byte[] byteArray = ms.ToArray();
                 SendByteArrayToServer($"Screenshot{DateTime.Now.Ticks}.png", byteArray);
+
+                Form.AddImageToChatStream(image);
             }
         }
 

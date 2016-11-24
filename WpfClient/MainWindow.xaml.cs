@@ -16,6 +16,8 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.ComponentModel;
 using WpfApplication1.Controls;
+using System.IO;
+
 
 namespace WpfApplication1
 {
@@ -188,15 +190,10 @@ namespace WpfApplication1
         {
             if (AblagenConfiguration.IsImage(completePath))
             {
-                Dispatcher.Invoke(() =>
-                {
-                    ImageSource source = new BitmapImage(new Uri(completePath));
-                    Image image = new Image();
-                    image.Source = source;
-                    image.StretchDirection = StretchDirection.DownOnly;
-                    image.HorizontalAlignment = HorizontalAlignment.Left;
-                    panel.Children.Add(image);
-                });
+                ImageSource source = new BitmapImage(new Uri(completePath));
+                Image image = new Image();
+                image.Source = source;
+                AddImageToChatStream(image);
             }
             else
             {
@@ -209,6 +206,8 @@ namespace WpfApplication1
                 });
             }
         }
+
+
 
         protected override void OnClosing(CancelEventArgs e)
         {
@@ -244,8 +243,45 @@ namespace WpfApplication1
             {
                 ChatText ct = new ChatText(sender, chatMessage);
                 ct.HorizontalAlignment = HorizontalAlignment.Left;
-                panel.Children.Add(ct);                
+                panel.Children.Add(ct);
             });
         }
+
+        public void AddImageToChatStream(Image image)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                image.StretchDirection = StretchDirection.DownOnly;
+                image.HorizontalAlignment = HorizontalAlignment.Left;
+                panel.Children.Add(image);
+            });
+        }
+
+        public void AddImageToChatStream(System.Drawing.Image image)
+        {
+            Image wpfimage = new Image();
+            wpfimage.Source = ToWpfImage(image);
+            AddImageToChatStream(wpfimage);
+
+        }
+
+
+
+
+
+        private BitmapImage ToWpfImage(System.Drawing.Image img)
+        {
+            MemoryStream ms = new MemoryStream();  // no using here! BitmapImage will dispose the stream after loading
+            img.Save(ms, System.Drawing.Imaging.ImageFormat.Bmp);
+
+            BitmapImage ix = new BitmapImage();
+            ix.BeginInit();
+            ix.CacheOption = BitmapCacheOption.OnLoad;
+            ix.StreamSource = ms;
+            ix.EndInit();
+            return ix;
+
+        }
+
     }
 }
