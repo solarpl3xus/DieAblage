@@ -95,6 +95,7 @@ namespace AblageServer
                         ablagenClient.DistributeRequest += HandleDistributeRequest;
                         ablagenClient.Disconnect += HandleClientDisconnect;
                         ablagenClient.SignIn += HandleSignIn;
+                        ablagenClient.ChatMessageReceive += HandleChatMessageReceive;
                         onlineClients[ipAddress] = ablagenClient;
 
                         
@@ -116,6 +117,14 @@ namespace AblageServer
             }
         }
 
+        private void HandleChatMessageReceive(AblagenClient sendingClient, ChatMessageEventArgs e)
+        {
+            List<AblagenClient> recipients = GetOtherOnlineClients(null);
+            for (int i = 0; i < recipients.Count; i++)
+            {
+                recipients[i].SendControlMessage($"!{sendingClient.Name}|{e.Message}");
+            }
+        }
 
         private void ListenForClientsData()
         {

@@ -14,7 +14,8 @@ namespace AblageServer
         FileUpload,
         Unknown,
         ByteArrayUpload,
-        WatchdogRequest
+        WatchdogRequest,
+        ChatMessage
     }
 
     public class AblagenClient
@@ -29,6 +30,10 @@ namespace AblageServer
 
         public delegate void SignInHandler(AblagenClient sendingClient, EventArgs e);
         public event SignInHandler SignIn;
+
+        public delegate void ChatMessageReceiveHandler(AblagenClient sendingClient, ChatMessageEventArgs e);
+        public event ChatMessageReceiveHandler ChatMessageReceive;
+
 
         private int bufferSize = 256;
 
@@ -55,7 +60,7 @@ namespace AblageServer
         }
 
         internal void StopCommunication()
-        {            
+        {
             controlCommunicationThread.Abort();
         }
 
@@ -105,6 +110,9 @@ namespace AblageServer
                             case MessageType.WatchdogRequest:
                                 HandleWatchdogRequest(message);
                                 break;
+                            case MessageType.ChatMessage:
+                                DistributeChatMessage(message);
+                                break;
                             case MessageType.Unknown:
                                 logger.Debug("Unknown Message received, discarding");
                                 break;
@@ -135,6 +143,10 @@ namespace AblageServer
             }
         }
 
+        private void DistributeChatMessage(string message)
+        {
+            ChatMessageReceive?.Invoke(this, new ChatMessageEventArgs(message.Substring(1)));
+        }
 
         private MessageType ReceiveControlMessage(out string message)
         {
@@ -159,6 +171,10 @@ namespace AblageServer
             else if (message.StartsWith("<"))
             {
                 messageType = MessageType.FileUpload;
+            }
+            else if (message.StartsWith("!"))
+            {
+                messageType = MessageType.ChatMessage;
             }
             else if (message == "PING")
             {

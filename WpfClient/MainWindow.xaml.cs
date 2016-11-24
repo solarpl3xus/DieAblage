@@ -15,6 +15,9 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.ComponentModel;
+using WpfApplication1.Controls;
+using System.IO;
+
 
 namespace WpfApplication1
 {
@@ -26,7 +29,7 @@ namespace WpfApplication1
         private static log4net.ILog logger = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         private AblagenController controller;
-        private bool started;
+        private bool started = false;
 
         public MainWindow()
         {
@@ -49,7 +52,6 @@ namespace WpfApplication1
             image.StretchDirection = StretchDirection.DownOnly;
             image.HorizontalAlignment = HorizontalAlignment.Left;
             // image.Width = source.Width;
-            panel.Children.Add(image);
 
 
             source = new BitmapImage(new Uri(@"D:\Bilder\RainbowScienceBARS.png"));
@@ -64,6 +66,11 @@ namespace WpfApplication1
             text.MouseDown += Text_MouseDown;
             panel.Children.Add(text);
             /**/
+
+            ChatText ct = new ChatText("Yung Lean", "Motorola");
+            ct.HorizontalAlignment = HorizontalAlignment.Left;
+            panel.Children.Add(ct);
+
 
         }
 
@@ -183,15 +190,10 @@ namespace WpfApplication1
         {
             if (AblagenConfiguration.IsImage(completePath))
             {
-                Dispatcher.Invoke(() =>
-                {
-                    ImageSource source = new BitmapImage(new Uri(completePath));
-                    Image image = new Image();
-                    image.Source = source;
-                    image.StretchDirection = StretchDirection.DownOnly;
-                    image.HorizontalAlignment = HorizontalAlignment.Left;
-                    panel.Children.Add(image);
-                });
+                ImageSource source = new BitmapImage(new Uri(completePath));
+                Image image = new Image();
+                image.Source = source;
+                AddImageToChatStream(image);
             }
             else
             {
@@ -204,6 +206,8 @@ namespace WpfApplication1
                 });
             }
         }
+
+
 
         protected override void OnClosing(CancelEventArgs e)
         {
@@ -221,6 +225,63 @@ namespace WpfApplication1
             Environment.Exit(4919);
             base.OnClosing(e);
         }
-       
+
+        private void OnSendTextBoxKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Return)
+            {
+                if (!string.IsNullOrEmpty(sendTextBox.Text))
+                {
+                    controller.SendControlMessage($"!{sendTextBox.Text}");
+                }
+            }
+        }
+
+        public void DisplayChatMessage(string sender, string chatMessage)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                ChatText ct = new ChatText(sender, chatMessage);
+                ct.HorizontalAlignment = HorizontalAlignment.Left;
+                panel.Children.Add(ct);
+            });
+        }
+
+        public void AddImageToChatStream(Image image)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                image.StretchDirection = StretchDirection.DownOnly;
+                image.HorizontalAlignment = HorizontalAlignment.Left;
+                panel.Children.Add(image);
+            });
+        }
+
+        public void AddImageToChatStream(System.Drawing.Image image)
+        {
+            Image wpfimage = new Image();
+            wpfimage.Source = ToWpfImage(image);
+            AddImageToChatStream(wpfimage);
+
+        }
+
+
+
+
+
+        private BitmapImage ToWpfImage(System.Drawing.Image img)
+        {
+            MemoryStream ms = new MemoryStream();  // no using here! BitmapImage will dispose the stream after loading
+            img.Save(ms, System.Drawing.Imaging.ImageFormat.Bmp);
+
+            BitmapImage ix = new BitmapImage();
+            ix.BeginInit();
+            ix.CacheOption = BitmapCacheOption.OnLoad;
+            ix.StreamSource = ms;
+            ix.EndInit();
+            return ix;
+
+        }
+
     }
 }

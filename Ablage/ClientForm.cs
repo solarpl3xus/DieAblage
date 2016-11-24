@@ -14,7 +14,7 @@ using System.Windows;
 
 namespace Ablage
 {
-    partial class ClientForm : Form, IClientForm
+    partial class ClientForm : Form
     {
         private static log4net.ILog logger = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
@@ -31,7 +31,7 @@ namespace Ablage
 
             serverStatussplitContainer.Panel2Collapsed = true;
 
-            controller = new AblagenController(this);
+//            controller = new AblagenController(this);
 
             new Thread(() =>
             {
@@ -169,6 +169,11 @@ namespace Ablage
             {
                 System.Diagnostics.Process.Start(completePath);
             }
+        }
+
+        public void DisplayChatMessage(string sender, string chatMessage)
+        {
+            throw new NotImplementedException();
         }
     }
 }
