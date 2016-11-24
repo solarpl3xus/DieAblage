@@ -395,18 +395,18 @@ namespace Ablage
                     int totalByteRead = 0;
                     int bytesRead;
                     var buffer = new byte[1024];
-                    List<byte> byteCache = new List<byte>();
-                    while ((bytesRead = hostDataStream.Read(buffer, 0, buffer.Length)) > 0)
+                    using (MemoryStream ms = new MemoryStream())
                     {
-                        byteCache.AddRange(buffer);
-                        totalByteRead += bytesRead;
+                        while ((bytesRead = hostDataStream.Read(buffer, 0, buffer.Length)) > 0)
+                        {
+                            ms.Write(buffer, 0, bytesRead);
+                            totalByteRead += bytesRead;
 
-                        Form.ReportDownloadProgess(totalByteRead * 100 / size);
+                            Form.ReportDownloadProgess(totalByteRead * 100 / size);
+                        }
+                        output.Write(Encryption.Decrypt(ms.ToArray(), "kackbratze"), 0, totalByteRead);
+                        Form.ReportDownloadProgess(100);
                     }
-                    buffer = Encryption.Decrypt(byteCache.ToArray(), "kackbratze");
-                    output.Write(buffer, 0, totalByteRead);
-                    Form.ReportDownloadProgess(100);
-
                     hostDataClient.Close();
 
 
