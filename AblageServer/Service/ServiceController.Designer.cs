@@ -1,4 +1,4 @@
-﻿namespace AblagenService
+﻿namespace AblageServer.Service
 {
     partial class ServiceController
     {

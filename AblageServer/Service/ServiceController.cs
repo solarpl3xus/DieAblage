@@ -9,7 +9,7 @@ using System.ServiceProcess;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AblagenService
+namespace AblageServer.Service
 {
     public partial class ServiceController : ServiceBase
     {
@@ -18,13 +18,13 @@ namespace AblagenService
         public ServiceController()
         {
             InitializeComponent();
-
+            CanStop = true;
             ablageServerController = new AblageServerController();
         }
 
         protected override void OnStart(string[] args)
         {
-            ablageServerController.Start();
+            ablageServerController.Start();   
         }
 
         protected override void OnStop()
