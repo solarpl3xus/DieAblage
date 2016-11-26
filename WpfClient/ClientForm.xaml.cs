@@ -20,7 +20,7 @@ using System.IO;
 
 
 namespace AblageClient
-{    
+{
     public partial class ClientForm : Window
     {
         private static log4net.ILog logger = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
@@ -66,8 +66,12 @@ namespace AblageClient
             ChatText ct = new ChatText("Yung Lean", "Motorola");
             ct.HorizontalAlignment = HorizontalAlignment.Left;
             panel.Children.Add(ct);
+            
+            
+            ChatFile ct = new Controls.ChatFile("Yung Lean", "Motorola", DateTime.Now);
+            ct.HorizontalAlignment = HorizontalAlignment.Left;
+            panel.Children.Add(ct);
             /**/
-
 
         }
 
@@ -107,6 +111,16 @@ namespace AblageClient
                 controller.HandlePaste();
             }
             base.OnKeyDown(e);
+        }
+
+
+        private void OnDropFile(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                controller.SendFilesToServer(files);
+            }
         }
 
 
@@ -176,14 +190,9 @@ namespace AblageClient
         {
             throw new NotImplementedException();
         }
+        
 
-
-        private void Text_MouseDown(object sender, MouseButtonEventArgs e)
-        {
-            System.Diagnostics.Process.Start(((TextBlock)sender).Text);
-        }
-
-        public void HandleFileDownloadCompleted(string completePath)
+        public void HandleFileDownloadCompleted(string sender, string completePath)
         {
             if (AblagenConfiguration.IsImage(completePath))
             {
@@ -192,38 +201,27 @@ namespace AblageClient
                     ImageSource source = new BitmapImage(new Uri(completePath));
                     Image image = new Image();
                     image.Source = source;
-                    AddImageToChatStream(image);
+                    AddImageToChatStream(sender, image);
                 });
             }
             else
             {
-                Dispatcher.Invoke(() =>
-                {
-                    TextBlock text = new TextBlock();
-                    text.Text = completePath;
-                    text.MouseDown += Text_MouseDown;
-                    panel.Children.Add(text);
-                });
+                AddFileToChatStream(sender, completePath);
             }
         }
 
-
-
-        protected override void OnClosing(CancelEventArgs e)
+        public void AddFileToChatStream(string sender, string completePath)
         {
-            if (controller != null)
+            Dispatcher.Invoke(() =>
             {
-                try
+                ChatFile ct = new ChatFile(sender, completePath);
+                ct.HorizontalAlignment = HorizontalAlignment.Left;
+                if (sender == AblagenConfiguration.ClientName)
                 {
-                    controller.Shutdown();
+                    ct.Margin = new Thickness(40, 0, 0, 0);
                 }
-                catch (Exception ex)
-                {
-                    logger.Error("Exception during shutdown,", ex);
-                }
-            }
-            Environment.Exit(4919);
-            base.OnClosing(e);
+                panel.Children.Add(ct);
+            });
         }
 
         private void OnSendTextBoxKeyDown(object sender, KeyEventArgs e)
@@ -233,6 +231,8 @@ namespace AblageClient
                 if (!string.IsNullOrEmpty(sendTextBox.Text))
                 {
                     controller.SendControlMessage($"!{sendTextBox.Text}");
+                    DisplayChatMessage(AblagenConfiguration.ClientName, sendTextBox.Text);
+                    sendTextBox.Text = string.Empty;
                 }
             }
         }
@@ -241,27 +241,35 @@ namespace AblageClient
         {
             Dispatcher.Invoke(() =>
             {
-                ChatText ct = new ChatText(sender, chatMessage);
-                ct.HorizontalAlignment = HorizontalAlignment.Left;
-                panel.Children.Add(ct);
+                ChatText chatText = new ChatText(sender, chatMessage);
+                chatText.HorizontalAlignment = HorizontalAlignment.Left;
+                if (sender == AblagenConfiguration.ClientName)
+                {
+                    chatText.Margin = new Thickness(40, 0, 0, 0);
+                }
+                panel.Children.Add(chatText);
             });
         }
 
-        public void AddImageToChatStream(Image image)
+        public void AddImageToChatStream(string sender, Image image)
         {
             Dispatcher.Invoke(() =>
             {
                 image.StretchDirection = StretchDirection.DownOnly;
                 image.HorizontalAlignment = HorizontalAlignment.Left;
+                if (sender == AblagenConfiguration.ClientName)
+                {
+                    image.Margin = new Thickness(40, 0, 0, 0);
+                }
                 panel.Children.Add(image);
             });
         }
 
-        public void AddImageToChatStream(System.Drawing.Image image)
+        public void AddImageToChatStream(string sender, System.Drawing.Image image)
         {
             Image wpfimage = new Image();
             wpfimage.Source = ToWpfImage(image);
-            AddImageToChatStream(wpfimage);
+            AddImageToChatStream(sender, wpfimage);
 
         }
 
@@ -283,5 +291,24 @@ namespace AblageClient
 
         }
 
+
+
+
+        protected override void OnClosing(CancelEventArgs e)
+        {
+            if (controller != null)
+            {
+                try
+                {
+                    controller.Shutdown();
+                }
+                catch (Exception ex)
+                {
+                    logger.Error("Exception during shutdown,", ex);
+                }
+            }
+            Environment.Exit(4919);
+            base.OnClosing(e);
+        }
     }
 }

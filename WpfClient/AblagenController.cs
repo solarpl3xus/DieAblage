@@ -146,10 +146,7 @@ namespace AblageClient
             if (Clipboard.ContainsFileDropList())
             {
                 string[] filePaths = Clipboard.GetFileDropList().Cast<string>().ToArray();
-                for (int i = 0; i < filePaths.Length; i++)
-                {
-                    SendFileToServer(filePaths[i]);
-                }
+                SendFilesToServer(filePaths);
             }
             else if (Clipboard.ContainsImage())
             {
@@ -159,7 +156,16 @@ namespace AblageClient
                 byte[] byteArray = ms.ToArray();
                 SendByteArrayToServer($"Screenshot{DateTime.Now.Ticks}.png", byteArray);
 
-                Form.AddImageToChatStream(image);
+                Form.AddImageToChatStream(AblagenConfiguration.ClientName, image);
+            }
+        }
+
+        public void SendFilesToServer(string[] filePaths)
+        {
+            for (int i = 0; i < filePaths.Length; i++)
+            {
+                SendFileToServer(filePaths[i]);
+                Form.AddFileToChatStream(AblagenConfiguration.ClientName, filePaths[i]);
             }
         }
 
@@ -368,13 +374,14 @@ namespace AblageClient
 
         private void HandleIncomingFileTransfer(string message)
         {
-            string[] messageFields = message.Split('|');
-            string fileName = messageFields[0].Substring(1);
+            string[] messageFields = message.Substring(1).Split('|');
+            string fileName = messageFields[0];
             int size = int.Parse(messageFields[1]);
-            ReceiveFile(fileName, size);
+            string sender = messageFields[2];
+            ReceiveFile(sender, fileName, size);
         }
 
-        private void ReceiveFile(string fileName, int size)
+        private void ReceiveFile(string sender, string fileName, int size)
         {
             string completePath = AdjustFilePathIfAlreadyExists(fileName);
 
@@ -408,15 +415,8 @@ namespace AblageClient
                         Form.ReportDownloadProgess(100);
                     }
                     hostDataClient.Close();
-
-
-                    /*   if (AblagenConfiguration.OpenFileAutomatically(completePath))
-                       {
-                           //System.Diagnostics.Process.Start(completePath);
-
-                       }*/
                 }
-                Form.HandleFileDownloadCompleted(completePath);
+                Form.HandleFileDownloadCompleted(sender, completePath);
             }
             catch (Exception e)
             {

@@ -59,7 +59,7 @@ namespace AblageServer
         {
             List<AblagenClient> recipientClients = GetOtherOnlineClients(null);
 
-            DistributionRequestArgs distributionRequestArgs = new DistributionRequestArgs($"{filePath.Substring(filePath.LastIndexOf('\\') + 1)}", File.ReadAllBytes(filePath));
+            DistributionRequestArgs distributionRequestArgs = new DistributionRequestArgs("Server", $"{filePath.Substring(filePath.LastIndexOf('\\') + 1)}", File.ReadAllBytes(filePath));
             for (int i = 0; i < recipientClients.Count; i++)
             {
                 recipientClients[i].HandleDistributionRequest(distributionRequestArgs);
@@ -101,14 +101,14 @@ namespace AblageServer
                         ablagenClient.ChatMessageReceive += HandleChatMessageReceive;
                         onlineClients[ipAddress] = ablagenClient;
 
-                        
+
                     }
                 }
                 catch (SocketException)
                 {
                     tryAgain = true;
                 }
-                catch(ThreadAbortException)
+                catch (ThreadAbortException)
                 {
 
                 }
@@ -122,7 +122,7 @@ namespace AblageServer
 
         private void HandleChatMessageReceive(AblagenClient sendingClient, ChatMessageEventArgs e)
         {
-            List<AblagenClient> recipients = GetOtherOnlineClients(null);
+            List<AblagenClient> recipients = GetOtherOnlineClients(sendingClient);
             for (int i = 0; i < recipients.Count; i++)
             {
                 recipients[i].SendControlMessage($"!{sendingClient.Name}|{e.Message}");
@@ -245,7 +245,7 @@ namespace AblageServer
                 }
                 catch (Exception e)
                 {
-                    logger.Error("Exception during client shutdown");                    
+                    logger.Error("Exception during client shutdown");
                 }
             }
         }

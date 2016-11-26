@@ -13,6 +13,5 @@ namespace AblageClient
     /// </summary>
     public partial class App : Application
     {
-        int ii = 23;
     }
 }

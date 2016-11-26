@@ -64,12 +64,20 @@
     </ApplicationDefinition>
     <Compile Include="AblagenConfiguration.cs" />
     <Compile Include="AblagenController.cs" />
+    <Compile Include="Controls\ChatFile.xaml.cs">
+      <DependentUpon>ChatFile.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Controls\ChatText.xaml.cs">
       <DependentUpon>ChatText.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Helper.cs" />
     <Compile Include="StringInputDialog.xaml.cs">
       <DependentUpon>StringInputDialog.xaml</DependentUpon>
     </Compile>
+    <Page Include="Controls\ChatFile.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Controls\ChatText.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -125,6 +133,9 @@
       <Project>{925334da-b6a1-4b4e-9008-618a65b88dba}</Project>
       <Name>Crypto</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\text-file-xxl.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -264,7 +264,7 @@ namespace AblageServer
 
                     if (DistributeRequest != null)
                     {
-                        DistributionRequestArgs distributeRequest = new DistributionRequestArgs(fileName, bufferedFile);
+                        DistributionRequestArgs distributeRequest = new DistributionRequestArgs(Name, fileName, bufferedFile);
                         DistributeRequest(this, distributeRequest);
                     }
 
@@ -293,7 +293,7 @@ namespace AblageServer
                 try
                 {
                     pendingDownloads.Add(distributionRequestArgs.FileBytes);
-                    SendControlMessage($">{distributionRequestArgs.FileName}|{distributionRequestArgs.FileBytes.Length}");
+                    SendControlMessage($">{distributionRequestArgs.FileName}|{distributionRequestArgs.FileBytes.Length}|{distributionRequestArgs.Sender}");
                 }
                 catch (Exception e)
                 {

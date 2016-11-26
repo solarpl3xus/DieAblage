@@ -78,18 +78,16 @@ namespace AblageClient
 
         public static bool IsImage(string filePath)
         {
-            if (filePath.Contains('.'))
-            {
-                int indexOfExtension = filePath.LastIndexOf('.');
-                string extension = filePath.Substring(indexOfExtension + 1);
+            string extension = Helper.GetFileExtension(filePath);
 
-                if (fileExtensionsToOpen.Contains(extension.ToUpper()))
-                {
-                    return true;
-                }
+            if (fileExtensionsToOpen.Contains(extension.ToUpper()))
+            {
+                return true;
             }
 
             return false;
         }
+
+
     }
 }

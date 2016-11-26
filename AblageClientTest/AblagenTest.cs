@@ -1,6 +1,6 @@
 ﻿using System;
 using NUnit.Framework;
-using Ablage;
+using AblageClient;
 using System.IO;
 using System.Collections.Generic;
 using System.Reflection;
@@ -55,7 +55,7 @@ namespace AblageClientTest
 
 
 
-            ablagenController.Disconnect();
+            ablagenController.Shutdown();
         }
 
         
@@ -123,8 +123,7 @@ namespace AblageClientTest
                 File.Delete($"{AblagenConfiguration.OutputPath}{testFileNames[i]}");
             }
 
-            ablagenController.Disconnect();
-            int sdf = 22;
+            ablagenController.Shutdown();            
             //AdjustFilePathIfAlreadyExists
         }
 

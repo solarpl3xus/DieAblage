@@ -8,11 +8,13 @@ namespace AblageServer
 {
     public class DistributionRequestArgs : EventArgs
     {
+        public string Sender { get; set; }
         public string FileName { get; set; }
         public byte[] FileBytes { get; set; }
 
-        public DistributionRequestArgs(string fileName, byte[] bufferedFile)
+        public DistributionRequestArgs(string sender,string fileName, byte[] bufferedFile)
         {
+            Sender = sender;
             FileName = fileName;
             FileBytes = bufferedFile;
         }

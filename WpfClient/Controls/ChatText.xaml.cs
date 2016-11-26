@@ -20,9 +20,13 @@ namespace AblageClient.Controls
     /// </summary>
     public partial class ChatText : UserControl
     {
-        public ChatText(string author, string text, DateTime timestamp)
+        public ChatText()
         {
             InitializeComponent();
+        }
+
+        public ChatText(string author, string text, DateTime timestamp) : this()
+        {
             textBlock.Text = text;
             authorLabel.Content = author;
             timeStampLabel.Content = timestamp.ToShortTimeString();
