@@ -25,11 +25,13 @@ namespace AblageServer
         private TcpListener tcpDataListener;
 
         private Dictionary<string, AblagenClient> onlineClients = new Dictionary<string, AblagenClient>();
+        private bool echoMode;
 
-        public AblageServerController()
+        public AblageServerController(bool echoMode = false)
         {
             controlPort = int.Parse(ConfigurationManager.AppSettings["ControlPort"]);
             dataPort = int.Parse(ConfigurationManager.AppSettings["DataPort"]);
+            this.echoMode = echoMode;
         }
 
         public void Start()
@@ -211,7 +213,7 @@ namespace AblageServer
 
         private List<AblagenClient> GetOtherOnlineClients(AblagenClient sendingClient)
         {
-            return onlineClients.Values.Where(ac => ac != sendingClient).ToList();
+            return onlineClients.Values.Where(ac => (echoMode || ac != sendingClient)).ToList();
         }
 
         private void HandleClientDisconnect(AblagenClient sendingClient, EventArgs e)

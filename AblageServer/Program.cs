@@ -44,14 +44,18 @@ namespace AblageServer
             {
                 AblagenServiceInstaller.Install(true, args);
             }
+            else if (args[0] == "-echo")
+            {
+                GuiStart(true);
+            }
         }
 
-        private static void GuiStart()
+        private static void GuiStart(bool echoMode = false)
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            AblageServerController ablageServerController = new AblageServerController();
+            AblageServerController ablageServerController = new AblageServerController(echoMode);
             Application.Run(new ServerForm(ablageServerController));
         }
 
