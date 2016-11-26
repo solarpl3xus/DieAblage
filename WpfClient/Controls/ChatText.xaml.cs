@@ -13,7 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace WpfApplication1.Controls
+namespace AblageClient.Controls
 {
     /// <summary>
     /// Interaction logic for UserControl1.xaml

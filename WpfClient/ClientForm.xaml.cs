@@ -1,4 +1,4 @@
-﻿using Ablage;
+﻿using AblageClient;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,23 +15,20 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.ComponentModel;
-using WpfApplication1.Controls;
+using AblageClient.Controls;
 using System.IO;
 
 
-namespace WpfApplication1
-{
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
-    public partial class MainWindow : Window, AblageClient.IClientForm
+namespace AblageClient
+{    
+    public partial class ClientForm : Window
     {
         private static log4net.ILog logger = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         private AblagenController controller;
         private bool started = false;
 
-        public MainWindow()
+        public ClientForm()
         {
             InitializeComponent();
 

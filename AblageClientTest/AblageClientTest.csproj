@@ -47,12 +47,6 @@
     </None>
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Ablage\AblageClientDeprecatedWinform.csproj">
-      <Project>{5001e781-c3cb-4416-a5a3-d79612ad0774}</Project>
-      <Name>AblageClientDeprecatedWinform</Name>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
