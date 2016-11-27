@@ -17,7 +17,9 @@ using System.Windows.Shapes;
 using System.ComponentModel;
 using AblageClient.Controls;
 using System.IO;
-
+using System.Media;
+using System.Runtime.InteropServices;
+using System.Windows.Interop;
 
 namespace AblageClient
 {
@@ -29,7 +31,10 @@ namespace AblageClient
         private bool started = false;
         private UIElement previousLastElement;
         private GlobalKeyListener globalKeyListener;
-        
+        private SoundPlayer simpleSound;
+
+
+
         public ClientForm()
         {
             InitializeComponent();
@@ -42,8 +47,10 @@ namespace AblageClient
             {
                 controller.Start();
             }).Start();
-            
+
             chatViewer.ScrollChanged += OnChatViewerScrollChanged;
+
+            simpleSound = new SoundPlayer(@"c:\Windows\Media\chimes.wav");
 
             /*/
             ImageSource source = new BitmapImage(new Uri(@"D:\Bilder\be very quiet.jpg"));
@@ -75,8 +82,24 @@ namespace AblageClient
             ChatFile ct = new Controls.ChatFile("Yung Lean", "Motorola", DateTime.Now);
             ct.HorizontalAlignment = HorizontalAlignment.Left;
             panel.Children.Add(ct);
-            /**/
 
+
+            ChatText ct = new Controls.ChatText("Yung Lean", @"Motorola http://google.com", DateTime.Now);
+            ct.HorizontalAlignment = HorizontalAlignment.Left;
+            panel.Children.Add(ct);
+
+            ct = new Controls.ChatText("Yung Lean", @"www.google.de", DateTime.Now);
+            ct.HorizontalAlignment = HorizontalAlignment.Left;
+            panel.Children.Add(ct);
+
+            ct = new Controls.ChatText("Yung Lean", @"www.google.de otto", DateTime.Now);
+            ct.HorizontalAlignment = HorizontalAlignment.Left;
+            panel.Children.Add(ct);
+
+            ct = new Controls.ChatText("Yung Lean", @"otto www.google.de otto", DateTime.Now);
+            ct.HorizontalAlignment = HorizontalAlignment.Left;
+            panel.Children.Add(ct);
+            /**/
         }
 
 
@@ -116,7 +139,7 @@ namespace AblageClient
         {
             if (IsActive || ignoreActive)
             {
-                controller.HandlePaste(); 
+                controller.HandlePaste();
             }
         }
 
@@ -150,10 +173,10 @@ namespace AblageClient
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
-        /*    if (e.Key == Key.V && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
-            {
-               
-            }*/
+            /*    if (e.Key == Key.V && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+                {
+
+                }*/
             base.OnKeyDown(e);
         }
 
@@ -280,11 +303,8 @@ namespace AblageClient
             {
                 ChatFile chatFile = new ChatFile(sender, completePath);
                 chatFile.HorizontalAlignment = HorizontalAlignment.Left;
-                if (sender == AblagenConfiguration.ClientName)
-                {
-                    chatFile.Margin = new Thickness(40, 0, 0, 0);
-                }
-                panel.Children.Add(chatFile);
+
+                AddUiElementToStream(sender, chatFile);
             });
         }
 
@@ -294,11 +314,7 @@ namespace AblageClient
             {
                 ChatText chatText = new ChatText(sender, chatMessage);
                 chatText.HorizontalAlignment = HorizontalAlignment.Left;
-                if (sender == AblagenConfiguration.ClientName)
-                {
-                    chatText.Margin = new Thickness(40, 0, 0, 0);
-                }
-                panel.Children.Add(chatText);
+                AddUiElementToStream(sender, chatText);
             });
         }
 
@@ -312,9 +328,36 @@ namespace AblageClient
                 {
                     image.Margin = new Thickness(40, 10, 0, 0);
                 }
+                else
+                {
+                    simpleSound.Play();
+                    Flasher.FlashWindow(this);
+                }
                 panel.Children.Add(image);
             });
         }
+
+
+        private void AddUiElementToStream(string sender, System.Windows.Controls.Control image)
+        {
+            if (sender == AblagenConfiguration.ClientName)
+            {
+                image.Margin = new Thickness(40, 0, 0, 0);
+            }
+            else
+            {
+                simpleSound.Play();
+                Flasher.FlashWindow(this);
+            }
+            panel.Children.Add(image);
+        }
+
+        protected override void OnActivated(EventArgs e)
+        {
+            Flasher.StopFlashingWindow(this);
+            base.OnActivated(e);
+        }
+
 
 
 
