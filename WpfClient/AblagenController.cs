@@ -159,7 +159,7 @@ namespace AblageClient
 
                 System.Windows.Controls.Image chatStreamImage = Helper.ConvertDrawingImageToControlsImage(image);
                 Form.AddImageToChatStream(AblagenConfiguration.ClientName, chatStreamImage);
-            }           
+            }
         }
 
         public void SendFilesToServer(string[] filePaths)
@@ -334,14 +334,14 @@ namespace AblageClient
 
             string fileName = pendingFile.First();
             byte[] fileBytes = File.ReadAllBytes(fileName);
-            UploadBytes(fileBytes);
+            UploadBytes(fileBytes, fileName);
 
             logger.Info($"Sent {fileName} to Server");
 
             pendingFile.Remove(fileName);
         }
 
-        private void UploadBytes(byte[] fileBytes)
+        private void UploadBytes(byte[] fileBytes, string fileName)
         {
             if (hostDataClient == null || !hostDataClient.Connected)
             {
@@ -352,9 +352,9 @@ namespace AblageClient
             {
                 int size = Math.Min(1024, fileBytes.Length - offset);
                 hostDataClient.GetStream().Write(fileBytes, offset, size);
-                Form.ReportUploadProgess(offset * 100 / fileBytes.Length);
+                Form.ReportUploadProgess((int)((long)offset * 100 / fileBytes.Length), fileName);
             }
-            Form.ReportUploadProgess(100);
+            Form.ReportUploadProgess(100, fileName);
 
             hostDataClient.GetStream().Close();
             hostDataClient.Close();
@@ -366,7 +366,7 @@ namespace AblageClient
 
             byte[] bytes = pendingBytes.First();
 
-            UploadBytes(bytes);
+            UploadBytes(bytes, "Image");
 
             logger.Info($"Sent bytes to Server");
 
@@ -391,12 +391,14 @@ namespace AblageClient
             {
                 using (var output = File.Create(completePath))
                 {
-                    Console.WriteLine("Client connected. Starting to receive the file");
+                    logger.Info("Client connected. Starting to receive the file");
 
                     if (hostDataClient == null || !hostDataClient.Connected)
                     {
                         hostDataClient = new TcpClient(AblagenConfiguration.HostIp, AblagenConfiguration.HostDataPort);
                     }
+
+                    Form.HandleFileDownloadStarted(sender, completePath);
 
                     NetworkStream hostDataStream = hostDataClient.GetStream();
 
@@ -410,11 +412,11 @@ namespace AblageClient
                             ms.Write(buffer, 0, bytesRead);
                             totalByteRead += bytesRead;
 
-                            Form.ReportDownloadProgess(totalByteRead * 100 / size);
+                            Form.ReportDownloadProgess((int)((long)totalByteRead * 100 / size), completePath);
                         }
                         byte[] byteCache = Encryption.Decrypt(ms.ToArray(), "kackbratze");
                         output.Write(byteCache, 0, byteCache.Length);
-                        Form.ReportDownloadProgess(100);
+                        Form.ReportDownloadProgess(100, completePath);
                     }
                     hostDataClient.Close();
                 }

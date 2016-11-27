@@ -99,7 +99,13 @@ namespace AblageClient
             ct = new Controls.ChatText("Yung Lean", @"otto www.google.de otto", DateTime.Now);
             ct.HorizontalAlignment = HorizontalAlignment.Left;
             panel.Children.Add(ct);
-            /**/
+
+            ChatImage ct = new ChatImage("you", "img");
+            ct.HorizontalAlignment = HorizontalAlignment.Left;
+            ct.Source = new BitmapImage(new Uri(@"D:\Bilder\RainbowScienceBARS.png"));
+            panel.Children.Add(ct);
+            
+             /**/
         }
 
 
@@ -171,16 +177,6 @@ namespace AblageClient
         }
 
 
-        protected override void OnKeyDown(KeyEventArgs e)
-        {
-            /*    if (e.Key == Key.V && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
-                {
-
-                }*/
-            base.OnKeyDown(e);
-        }
-
-
         private void OnDropFile(object sender, DragEventArgs e)
         {
             if (e.Data.GetDataPresent(DataFormats.FileDrop))
@@ -237,19 +233,50 @@ namespace AblageClient
         }
 
 
-        public void ReportDownloadProgess(int progress)
+        public void ReportDownloadProgess(int progress, string completePath)
         {
             Dispatcher.Invoke(() =>
             {
-                downloadBar.Value = progress;
+                List<UIElement> elementList = new List<UIElement>();
+                foreach (UIElement element in panel.Children)
+                {
+                    elementList.Add(element);
+                }
+                UIElement downloadingElement = elementList.Where(c => c.GetType() == typeof(ChatFile) && ((ChatFile)c).FilePath == completePath || c.GetType() == typeof(ChatImage) && ((ChatImage)c).ImageName == completePath).LastOrDefault();
+                if (downloadingElement != null)
+                {
+                    Type elementType = downloadingElement.GetType();
+
+                    if (elementType == typeof(ChatFile))
+                    {
+                        ((ChatFile)downloadingElement).SetProgress(progress);
+                    }
+                    else if(elementType == typeof(ChatImage))
+                    {
+                        ((ChatImage)downloadingElement).SetProgress(progress);
+                    }
+                }
+
+                if (progress >= 100)
+                {
+                    simpleSound.Play();
+                    Flasher.FlashWindow(this);
+                }
             });
         }
 
-        public void ReportUploadProgess(int progress)
+        public void ReportUploadProgess(int progress, string fileName)
         {
             Dispatcher.Invoke(() =>
             {
-                uploadBar.Value = progress;
+                List<UIElement> elementList = new List<UIElement>();
+                foreach (UIElement element in panel.Children)
+                {
+                    elementList.Add(element);
+                }
+                ChatFile pendingChatFile = elementList.Where(c => c.GetType() == typeof(ChatFile) && ((ChatFile)c).FilePath == fileName).Select(c => (ChatFile)c).LastOrDefault();
+
+                pendingChatFile?.SetProgress(progress);
             });
         }
 
@@ -260,22 +287,48 @@ namespace AblageClient
         }
 
 
-        public void HandleFileDownloadCompleted(string sender, string completePath)
+        public void HandleFileDownloadStarted(string sender, string completePath)
         {
             if (AblagenConfiguration.IsImage(completePath))
             {
                 Dispatcher.Invoke(() =>
                 {
-                    ImageSource source = new BitmapImage(new Uri(completePath));
-                    Image image = new Image();
-                    image.Source = source;
-                    AddImageToChatStream(sender, image);
+                    ChatImage ct = new ChatImage(sender, completePath); ;
+                    ct.HorizontalAlignment = HorizontalAlignment.Left;
+                    panel.Children.Add(ct);                    
                 });
             }
             else
             {
                 AddFileToChatStream(sender, completePath);
             }
+
+        }
+
+        public void HandleFileDownloadCompleted(string sender, string completePath)
+        {
+            if (AblagenConfiguration.IsImage(completePath))
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    List<UIElement> elementList = new List<UIElement>();
+                    foreach (UIElement element in panel.Children)
+                    {
+                        elementList.Add(element);
+                    }
+                    ChatImage chatImage = elementList.Where(c => c.GetType() == typeof(ChatImage) && ((ChatImage)c).ImageName == completePath).Select(c => (ChatImage)c).LastOrDefault();
+
+                    if (chatImage != null)
+                    {
+                        chatImage.Source = new BitmapImage(new Uri(completePath)); 
+                    }
+                    else
+                    {
+                        logger.Warn($"Chat image for path {completePath} could not be found");
+                    }
+                    
+                });
+            }            
         }
 
 

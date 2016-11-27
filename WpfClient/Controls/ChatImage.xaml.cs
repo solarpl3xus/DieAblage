@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,32 +16,37 @@ using System.Windows.Shapes;
 namespace AblageClient.Controls
 {
     /// <summary>
-    /// Interaction logic for ChatFile.xaml
+    /// Interaction logic for ChatImage.xaml
     /// </summary>
-    public partial class ChatFile : UserControl
+    public partial class ChatImage : UserControl
     {
-        public string FilePath { get; private set; }
-        private bool downLoadComplete = false;
+        public ImageSource Source
+        {
+            get { return image.Source; }
+            set
+            {
+                image.Source = value;
+                progressBar.Visibility = Visibility.Collapsed;
+            }
+        }
 
-        public ChatFile(string author, string filePath, DateTime timestamp)
+        public string ImageName { get; private set; }
+
+        public ChatImage(string author, string imageName, DateTime timestamp)
         {
             InitializeComponent();
 
-            FilePath = filePath;
-
-            textBlock.Text = Helper.GetFileNameFromPath(filePath);
+            ImageName = imageName;
+            
             authorLabel.Content = author;
             timeStampLabel.Content = timestamp.ToShortTimeString();
-
-            MouseDown += OnMouseDown;
+            
         }
 
-        public ChatFile(string author, string text) : this(author, text, DateTime.Now)
+        public ChatImage(string author, string text) : this(author, text, DateTime.Now)
         {
 
         }
-
-
 
         public void SetProgress(int progress)
         {
@@ -53,18 +57,8 @@ namespace AblageClient.Controls
             else
             {
                 progressBar.Visibility = Visibility.Collapsed;
-                downLoadComplete = true;
             }
             progressBar.Value = progress;
         }
-
-        private void OnMouseDown(object sender, MouseButtonEventArgs e)
-        {
-            if (File.Exists(FilePath) && downLoadComplete)
-            {
-                System.Diagnostics.Process.Start(FilePath);
-            }
-        }
-
     }
 }

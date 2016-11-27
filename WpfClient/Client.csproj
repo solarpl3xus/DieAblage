@@ -67,6 +67,9 @@
     <Compile Include="Controls\ChatFile.xaml.cs">
       <DependentUpon>ChatFile.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Controls\ChatImage.xaml.cs">
+      <DependentUpon>ChatImage.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Controls\ChatText.xaml.cs">
       <DependentUpon>ChatText.xaml</DependentUpon>
     </Compile>
@@ -77,6 +80,10 @@
       <DependentUpon>StringInputDialog.xaml</DependentUpon>
     </Compile>
     <Page Include="Controls\ChatFile.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Controls\ChatImage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
