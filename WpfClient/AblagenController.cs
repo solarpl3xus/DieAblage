@@ -156,7 +156,9 @@ namespace AblageClient
                 byte[] byteArray = ms.ToArray();
                 SendByteArrayToServer($"Screenshot{DateTime.Now.Ticks}.png", byteArray);
 
-                Form.AddImageToChatStream(AblagenConfiguration.ClientName, image);
+
+                System.Windows.Controls.Image chatStreamImage = Helper.ConvertDrawingImageToControlsImage(image);
+                Form.AddImageToChatStream(AblagenConfiguration.ClientName, chatStreamImage);
             }
         }
 
@@ -270,7 +272,7 @@ namespace AblageClient
             string[] dataArray = messageData.Split('|');
             string sender = dataArray[0];
             string chatMessage = dataArray[1];
-            Form.DisplayChatMessage(sender, chatMessage);
+            Form.AddChatMessageToChatStream(sender, chatMessage);
         }
 
         private MessageType ReceiveControlMessage(out string message)
