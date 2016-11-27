@@ -76,7 +76,22 @@ namespace AblageClient
             ct.HorizontalAlignment = HorizontalAlignment.Left;
             panel.Children.Add(ct);
             /**/
+            ChatText ct = new Controls.ChatText("Yung Lean", @"Motorola http://google.com", DateTime.Now);
+            ct.HorizontalAlignment = HorizontalAlignment.Left;
+            panel.Children.Add(ct);
 
+            ct = new Controls.ChatText("Yung Lean", @"www.google.de", DateTime.Now);
+            ct.HorizontalAlignment = HorizontalAlignment.Left;
+            panel.Children.Add(ct);
+
+            ct = new Controls.ChatText("Yung Lean", @"www.google.de otto", DateTime.Now);
+            ct.HorizontalAlignment = HorizontalAlignment.Left;
+            panel.Children.Add(ct);
+
+
+            ct = new Controls.ChatText("Yung Lean", @"otto www.google.de otto", DateTime.Now);
+            ct.HorizontalAlignment = HorizontalAlignment.Left;
+            panel.Children.Add(ct);
         }
 
 
