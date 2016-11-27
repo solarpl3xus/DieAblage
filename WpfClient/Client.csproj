@@ -70,6 +70,7 @@
     <Compile Include="Controls\ChatText.xaml.cs">
       <DependentUpon>ChatText.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Flasher.cs" />
     <Compile Include="GlobalKeyListener.cs" />
     <Compile Include="Helper.cs" />
     <Compile Include="StringInputDialog.xaml.cs">
