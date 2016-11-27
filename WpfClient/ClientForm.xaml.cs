@@ -28,21 +28,21 @@ namespace AblageClient
         private AblagenController controller;
         private bool started = false;
         private UIElement previousLastElement;
-
+        private GlobalKeyListener globalKeyListener;
+        
         public ClientForm()
         {
             InitializeComponent();
 
             controller = new AblagenController(this);
+            globalKeyListener = new GlobalKeyListener(this);
 
             hostConnectedLabel.Visibility = Visibility.Collapsed;
             new Thread(() =>
             {
                 controller.Start();
             }).Start();
-
             
-
             chatViewer.ScrollChanged += OnChatViewerScrollChanged;
 
             /*/
@@ -78,7 +78,7 @@ namespace AblageClient
             /**/
 
         }
-        
+
 
         private void OnChatViewerScrollChanged(object sender, ScrollChangedEventArgs e)
         {
@@ -101,15 +101,23 @@ namespace AblageClient
 
                     theHeight = theImage.ActualHeight;
                 }
-                else if(elementType == typeof(UserControl))
+                else if (elementType == typeof(UserControl))
                 {
                     theHeight = ((UserControl)lastElement).Height;
                 }
 
-                chatViewer.ScrollToVerticalOffset(chatViewer.ScrollableHeight);  
+                chatViewer.ScrollToVerticalOffset(chatViewer.ScrollableHeight);
             }
 
             previousLastElement = lastElement;
+        }
+
+        internal void Paste(bool ignoreActive = false)
+        {
+            if (IsActive || ignoreActive)
+            {
+                controller.HandlePaste(); 
+            }
         }
 
         public string PromptForName()
@@ -142,10 +150,10 @@ namespace AblageClient
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
-            if (e.Key == Key.V && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+        /*    if (e.Key == Key.V && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
             {
-                controller.HandlePaste();
-            }
+               
+            }*/
             base.OnKeyDown(e);
         }
 
@@ -158,6 +166,7 @@ namespace AblageClient
                 controller.SendFilesToServer(files);
             }
         }
+
 
 
         private void OnSendFileButtonClick(object sender, RoutedEventArgs e)
@@ -258,6 +267,10 @@ namespace AblageClient
                     sendTextBox.Text = string.Empty;
                 }
             }
+            else if (e.Key == Key.V && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+            {
+                controller.HandlePaste();
+            }
         }
 
 
@@ -274,7 +287,7 @@ namespace AblageClient
                 panel.Children.Add(chatFile);
             });
         }
-        
+
         public void AddChatMessageToChatStream(string sender, string chatMessage)
         {
             Dispatcher.Invoke(() =>
@@ -288,7 +301,7 @@ namespace AblageClient
                 panel.Children.Add(chatText);
             });
         }
-        
+
         public void AddImageToChatStream(string sender, Image image)
         {
             Dispatcher.Invoke(() =>
@@ -302,7 +315,8 @@ namespace AblageClient
                 panel.Children.Add(image);
             });
         }
-        
+
+
 
         protected override void OnClosing(CancelEventArgs e)
         {
@@ -320,5 +334,6 @@ namespace AblageClient
             Environment.Exit(4919);
             base.OnClosing(e);
         }
+
     }
 }

@@ -30,11 +30,7 @@
         <Label x:Name="hostConnectedLabel" Content="Could not connect to host" HorizontalAlignment="Center" Margin="0,-3,0,0" VerticalAlignment="Top" Width="517" HorizontalContentAlignment="Center" Background="Red" Foreground="White" FontWeight="Bold" Height="55"/>
         <ListBox x:Name="clientListBox" HorizontalAlignment="Left" Height="55" Margin="0,-3,0,0" VerticalAlignment="Top" Width="517"/>
         <Button x:Name="sendFileButton" Content="Send File" HorizontalAlignment="Left" Margin="255,71,0,0" VerticalAlignment="Top" Width="75" Click="OnSendFileButtonClick"/>
-        <TextBox x:Name="sendTextBox"  Height="23" Margin="10,0,10,10" TextWrapping="Wrap" VerticalAlignment="Bottom" KeyDown="OnSendTextBoxKeyDown"/>
-
-
-
-
+        <TextBox x:Name="sendTextBox"  Height="23" Margin="10,0,10,10" TextWrapping="Wrap" VerticalAlignment="Bottom"  KeyDown="OnSendTextBoxKeyDown"/>
 
     </Grid>
 </Window>

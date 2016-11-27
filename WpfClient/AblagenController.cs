@@ -159,7 +159,7 @@ namespace AblageClient
 
                 System.Windows.Controls.Image chatStreamImage = Helper.ConvertDrawingImageToControlsImage(image);
                 Form.AddImageToChatStream(AblagenConfiguration.ClientName, chatStreamImage);
-            }
+            }           
         }
 
         public void SendFilesToServer(string[] filePaths)
