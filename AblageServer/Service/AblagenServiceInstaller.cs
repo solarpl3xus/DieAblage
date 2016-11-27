@@ -7,6 +7,7 @@ using System.Linq;
 using System.ServiceProcess;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace AblageServer.Service
 {
@@ -15,7 +16,7 @@ namespace AblageServer.Service
     {
         public ServiceInstallerProcess()
         {
-            this.Account = ServiceAccount.LocalSystem;
+            this.Account = ServiceAccount.LocalService;
         }
     }
 
@@ -45,11 +46,13 @@ namespace AblageServer.Service
                         if (undo)
                         {
                             inst.Uninstall(state);
+                            MessageBox.Show("Service uninstalled");
                         }
                         else
                         {
                             inst.Install(state);
                             inst.Commit(state);
+                            MessageBox.Show("Service installed");
                         }
                     }
                     catch
@@ -65,6 +68,7 @@ namespace AblageServer.Service
             }
             catch (Exception ex)
             {
+                MessageBox.Show($"Error during service install {ex.Message}");
                 Console.Error.WriteLine(ex.Message);
             }
         }
