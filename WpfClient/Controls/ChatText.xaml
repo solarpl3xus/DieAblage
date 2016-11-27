@@ -12,14 +12,18 @@
                 <StackPanel Orientation="Vertical">
                     <Label x:Name="authorLabel" HorizontalAlignment="Left" Content="Author"/>
                     <Label x:Name="timeStampLabel" HorizontalAlignment="Right" Margin="0,-25,0,0"  Content="13:37"/>
-                    <TextBlock x:Name="textBlock" Margin="0,-5,0,0"
-                   FontSize="20" 
-                   TextWrapping="Wrap" 
-                   Foreground="Black"
-                   MinWidth="150"
-                   MaxWidth="250"
-                   Text="" 
-                   Background="#FFA8FFA4" />
+                    <TextBox 
+                        x:Name="textBlock" 
+                        Margin="0,-5,0,0" 
+                        IsReadOnly="True" 
+                        BorderThickness="0"
+                        FontSize="20" 
+                        TextWrapping="Wrap" 
+                        Foreground="Black"
+                        MinWidth="150"
+                        MaxWidth="250"
+                        Text=""                    
+                        Background="#FFA8FFA4" />
                 </StackPanel>
             </Border>
         </StackPanel>
