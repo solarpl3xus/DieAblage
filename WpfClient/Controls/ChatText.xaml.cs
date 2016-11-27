@@ -32,43 +32,53 @@ namespace AblageClient.Controls
 
 
         public ChatText(string author, string text, DateTime timestamp) : this()
-        {                        
+        {
             Paragraph para = new Paragraph();
             textBlock.Document = new FlowDocument();
             textBlock.Document.Blocks.Add(para);
-            para.Inlines.Add(new Run(text));
-            
-            /*
-            List<Match> hyperLinkMatches = new List<Match>();
-            foreach (Match match in (RE_URL.Matches(text)))
-            {
-                hyperLinkMatches.Add(match);
-            }
-            
 
-            int last_pos = 0;
-            foreach (Match match in hyperLinkMatches)
+            if (RE_URL.IsMatch(text))
             {
-                if (match.Index != last_pos)
+                List<Match> hyperLinkMatches = new List<Match>();
+                foreach (Match match in (RE_URL.Matches(text)))
                 {
-                    var raw_text = text.Substring(last_pos, match.Index - last_pos);
-                    para.Inlines.Add(new Run(raw_text));
+                    hyperLinkMatches.Add(match);
                 }
 
-                string hyperLink = match.Value.StartsWith("www.", StringComparison.CurrentCultureIgnoreCase) ? $"http://{match.Value}" : match.Value;
 
-                var link = new Hyperlink(new Run(match.Value))
+                int last_pos = 0;
+                foreach (Match match in hyperLinkMatches)
                 {
-                    NavigateUri = new Uri(hyperLink)
-                };
-                link.RequestNavigate += (sender, args) => Process.Start(args.Uri.ToString());
+                    if (match.Index != last_pos)
+                    {
+                        var raw_text = text.Substring(last_pos, match.Index - last_pos);
+                        para.Inlines.Add(new Run(raw_text));
+                    }
 
-                para.Inlines.Add(link);
+                    string hyperLink = match.Value.StartsWith("www.", StringComparison.CurrentCultureIgnoreCase) ? $"http://{match.Value}" : match.Value;
+
+                    var link = new Hyperlink(new Run(match.Value))
+                    {
+                        NavigateUri = new Uri(hyperLink)
+                    };
+                    link.RequestNavigate += (sender, args) => Process.Start(args.Uri.ToString());
+
+                    para.Inlines.Add(link);
 
 
-                last_pos = match.Index + match.Length;
+                    last_pos = match.Index + match.Length;
+                    if (match.Index == hyperLinkMatches[hyperLinkMatches.Count - 1].Index)
+                    {
+                        var raw_text = text.Substring(last_pos);
+                        para.Inlines.Add(new Run(raw_text));
+                    }
+                }
+
             }
-            */
+            else
+            {
+                para.Inlines.Add(new Run(text));
+            }
             authorLabel.Content = author;
             timeStampLabel.Content = timestamp.ToShortTimeString();
         }
