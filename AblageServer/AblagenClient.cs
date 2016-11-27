@@ -297,8 +297,7 @@ namespace AblageServer
                 }
                 catch (Exception e)
                 {
-                    e.ToString();
-                    throw;
+                    logger.Error(e);                    
                 }
             }).Start();
         }
