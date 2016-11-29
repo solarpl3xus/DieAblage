@@ -41,9 +41,8 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\Ablage\App.config">
+    <None Include="..\WpfClient\App.config">
       <Link>App.config</Link>
-      <SubType>Designer</SubType>
     </None>
     <None Include="packages.config" />
   </ItemGroup>
