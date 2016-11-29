@@ -7,6 +7,7 @@
         mc:Ignorable="d"
         Title="Die Ablage" Height="350" Width="525"
         Drop="OnDropFile" AllowDrop="True"
+        Icon="AblagenIcon.ico"
         >
     <Grid>
 
