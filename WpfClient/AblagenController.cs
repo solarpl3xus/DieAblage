@@ -8,24 +8,11 @@ using System.Linq;
 using System.Threading;
 using System.Windows.Forms;
 using System.Drawing;
-using Crypto;
+using CommunicationBase;
 using AblageClient;
 
 namespace AblageClient
 {
-    enum MessageType
-    {
-        Unknown,
-        ServerShutdown,
-        AcceptFileSend,
-        IncomingFileTransfer,
-        OnlineNotification,
-        OfflineNotification,
-        AcceptByteSend,
-        WatchdogReply,
-        ChatMessage
-    }
-
     public class AblagenController
     {
         private static log4net.ILog logger = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
@@ -44,6 +31,7 @@ namespace AblageClient
         private List<byte[]> pendingBytes;
         private Thread watchdogThread;
         private bool connected;
+        private TelegramParser telegramParser;
 
         public ClientForm Form { get; set; }
 
@@ -57,6 +45,7 @@ namespace AblageClient
         public AblagenController(ClientForm mainForm) : this()
         {
             Form = mainForm;
+            telegramParser = new TelegramParser();
 
             if (string.IsNullOrEmpty(AblagenConfiguration.ClientName))
             {
@@ -104,7 +93,9 @@ namespace AblageClient
 
             hostControlStream = hostControlClient.GetStream();
 
-            hostControlStream.Write(Encoding.ASCII.GetBytes(AblagenConfiguration.ClientName), 0, AblagenConfiguration.ClientName.Length);
+            Telegram telegram = new Telegram(Constants.TelegramTypes.SignIn);
+            telegram[Constants.TelegramFields.Name] = AblagenConfiguration.ClientName;
+            SendTelegram(telegram);
 
             logger.Debug($"logged in as {AblagenConfiguration.ClientName}");
         }
@@ -130,7 +121,7 @@ namespace AblageClient
                 semaphore.WaitOne(30000);
                 if (connected)
                 {
-                    SendControlMessage("PING");
+                    SendTelegram(new Telegram(Constants.TelegramTypes.WatchdogRequest));
                 }
             }
         }
@@ -178,7 +169,10 @@ namespace AblageClient
                 logger.Info($"Request send byte array {fileName} to server");
 
                 pendingBytes.Add(byteArray);
-                SendControlMessage($"<!{fileName}");
+
+                Telegram telegram = new Telegram(Constants.TelegramTypes.ByteArrayTransferRequest);
+                telegram[Constants.TelegramFields.FileName] = fileName;
+                SendTelegram(telegram);
             }
 
             ).Start();
@@ -191,14 +185,23 @@ namespace AblageClient
                 logger.Info($"Request send {filePath} to server");
 
                 pendingFile.Add(filePath);
-                SendControlMessage($"<{filePath.Substring(filePath.LastIndexOf('\\') + 1)}");
+
+                Telegram telegram = new Telegram(Constants.TelegramTypes.FileTransferRequest);
+                telegram[Constants.TelegramFields.FileName] = filePath.Substring(filePath.LastIndexOf('\\') + 1);
+                SendTelegram(telegram);
             }
 
             ).Start();
         }
 
 
-        public void SendControlMessage(string message)
+        public void SendTelegram(Telegram telegram)
+        {
+            string message = telegramParser.ParseTelegram(telegram);
+            SendControlMessage(message);
+        }
+
+        private void SendControlMessage(string message)
         {
             ASCIIEncoding encoder = new ASCIIEncoding();
             byte[] buffer = encoder.GetBytes(message);
@@ -215,35 +218,38 @@ namespace AblageClient
                 do
                 {
                     string message = string.Empty;
-                    MessageType messageType = ReceiveControlMessage(out message);
 
-                    switch (messageType)
+                    //MessageType messageType = ReceiveControlMessage(out message);
+
+                    Telegram telegram = ReceiveControlMessage();
+
+                    switch (telegram.TelegramType)
                     {
-                        case MessageType.ServerShutdown:
+                        case Constants.TelegramTypes.HostShutdown:
                             serverOnline = false;
                             break;
-                        case MessageType.AcceptFileSend:
-                            HandleFileUpload(message);
+                        case Constants.TelegramTypes.FileSendAccept:
+                            HandleFileUpload(telegram);
                             break;
-                        case MessageType.AcceptByteSend:
-                            HandleByteUpload(message);
+                        case Constants.TelegramTypes.ByteSendAccept:
+                            HandleByteUpload(telegram);
                             break;
-                        case MessageType.IncomingFileTransfer:
-                            HandleIncomingFileTransfer(message);
+                        case Constants.TelegramTypes.IncomingFileTransfer:
+                            HandleIncomingFileTransfer(telegram);
                             break;
-                        case MessageType.OnlineNotification:
-                            HandleOnlineNotification(message);
+                        case Constants.TelegramTypes.OnlineNotification:
+                            HandleOnlineNotification(telegram);
                             break;
-                        case MessageType.OfflineNotification:
-                            HandleOfflineNotification(message);
+                        case Constants.TelegramTypes.OfflineNotification:
+                            HandleOfflineNotification(telegram);
                             break;
-                        case MessageType.ChatMessage:
-                            ReceiveChatMessage(message);
+                        case Constants.TelegramTypes.ChatMessage:
+                            ReceiveChatMessage(telegram);
                             break;
-                        case MessageType.Unknown:
+                        case Constants.TelegramTypes.Unknown:
                             logger.Debug("Unknow message type, discarding");
                             break;
-                        default:
+                        default:                            
                             break;
                     }
                 } while (serverOnline);
@@ -266,69 +272,37 @@ namespace AblageClient
             }
         }
 
-        private void ReceiveChatMessage(string message)
+        private void ReceiveChatMessage(Telegram telegram)
         {
-            string messageData = message.Substring(1);
-            string[] dataArray = messageData.Split('|');
-            string sender = dataArray[0];
-            string chatMessage = dataArray[1];
+            string sender = telegram[Constants.TelegramFields.Sender];
+            string chatMessage = telegram[Constants.TelegramFields.Text];
             Form.AddChatMessageToChatStream(sender, chatMessage);
         }
 
-        private MessageType ReceiveControlMessage(out string message)
+        private Telegram ReceiveControlMessage()
         {
-            message = string.Empty;
-            MessageType messageType;
-
             byte[] rawMessage = new byte[bufferSize];
             int bytesRead;
 
             bytesRead = hostControlStream.Read(rawMessage, 0, bufferSize);
-            message = Encoding.ASCII.GetString(rawMessage).Substring(0, bytesRead).Substring(0, bytesRead);
+            string message = Encoding.ASCII.GetString(rawMessage).Substring(0, bytesRead).Substring(0, bytesRead);
             logger.Info($"> {message}");
+
+            Telegram telegram;
             if (bytesRead == 0)
             {
-                logger.Debug("Host shutdown");
-                messageType = MessageType.ServerShutdown;
-            }
-            else if (message.StartsWith("PONG"))
-            {
-                messageType = MessageType.WatchdogReply;
-            }
-            else if (message == "OK")
-            {
-                messageType = MessageType.AcceptFileSend;
-            }
-            else if (message.StartsWith("OK!"))
-            {
-                messageType = MessageType.AcceptByteSend;
-            }
-            else if (message.StartsWith(">"))
-            {
-                messageType = MessageType.IncomingFileTransfer;
-            }
-            else if (message.StartsWith("+"))
-            {
-                messageType = MessageType.OnlineNotification;
-            }
-            else if (message.StartsWith("-"))
-            {
-                messageType = MessageType.OfflineNotification;
-            }
-            else if (message.StartsWith("!"))
-            {
-                messageType = MessageType.ChatMessage;
+                telegram = new Telegram(Constants.TelegramTypes.HostShutdown);
             }
             else
             {
-                messageType = MessageType.Unknown;
+                telegram = telegramParser.ParseMessage(message);
             }
 
-            return messageType;
+            return telegram;
         }
 
 
-        private void HandleFileUpload(string message)
+        private void HandleFileUpload(Telegram telegram)
         {
             logger.Info($"Server confirmed request to send file");
 
@@ -360,7 +334,7 @@ namespace AblageClient
             hostDataClient.Close();
         }
 
-        private void HandleByteUpload(string message)
+        private void HandleByteUpload(Telegram telegram)
         {
             logger.Info($"Server confirmed request to send file");
 
@@ -374,12 +348,12 @@ namespace AblageClient
         }
 
 
-        private void HandleIncomingFileTransfer(string message)
+        private void HandleIncomingFileTransfer(Telegram telegram)
         {
-            string[] messageFields = message.Substring(1).Split('|');
-            string fileName = messageFields[0];
-            int size = int.Parse(messageFields[1]);
-            string sender = messageFields[2];
+            string fileName = telegram[Constants.TelegramFields.FileName];
+            int size = int.Parse(telegram[Constants.TelegramFields.FileSize]);
+            string sender = telegram[Constants.TelegramFields.Sender];
+
             ReceiveFile(sender, fileName, size);
         }
 
@@ -454,16 +428,16 @@ namespace AblageClient
         }
 
 
-        private void HandleOnlineNotification(string message)
+        private void HandleOnlineNotification(Telegram telegram)
         {
-            string clientName = message.Substring(1);
+            string clientName = telegram[Constants.TelegramFields.Name];
             Form.RegisterOnlineClient(clientName);
         }
 
 
-        private void HandleOfflineNotification(string message)
+        private void HandleOfflineNotification(Telegram telegram)
         {
-            string clientName = message.Substring(1);
+            string clientName = telegram[Constants.TelegramFields.Name];
             Form.DeregisterOnlineClient(clientName);
         }
 

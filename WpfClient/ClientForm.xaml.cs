@@ -20,6 +20,7 @@ using System.IO;
 using System.Media;
 using System.Runtime.InteropServices;
 using System.Windows.Interop;
+using CommunicationBase;
 
 namespace AblageClient
 {
@@ -338,8 +339,12 @@ namespace AblageClient
             {
                 if (!string.IsNullOrEmpty(sendTextBox.Text))
                 {
-                    controller.SendControlMessage($"!{sendTextBox.Text}");
+                    Telegram telegram = new Telegram(Constants.TelegramTypes.ChatMessage);
+                    telegram[Constants.TelegramFields.Text] = sendTextBox.Text;
+                    controller.SendTelegram(telegram);
+
                     AddChatMessageToChatStream(AblagenConfiguration.ClientName, sendTextBox.Text);
+
                     sendTextBox.Text = string.Empty;
                 }
             }

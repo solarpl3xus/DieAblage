@@ -139,16 +139,16 @@
     <AppDesigner Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Crypto\Crypto.csproj">
+    <ProjectReference Include="..\Crypto\CommunicationBase.csproj">
       <Project>{925334da-b6a1-4b4e-9008-618a65b88dba}</Project>
-      <Name>Crypto</Name>
+      <Name>CommunicationBase</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\text-file-xxl.png" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\AblagenIcon.ico" />
+    <Resource Include="Resources\AblagenIcon.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

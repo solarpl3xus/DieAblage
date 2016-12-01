@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CommunicationBase;
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
@@ -125,7 +126,11 @@ namespace AblageServer
             List<AblagenClient> recipients = GetOtherOnlineClients(sendingClient);
             for (int i = 0; i < recipients.Count; i++)
             {
-                recipients[i].SendControlMessage($"!{sendingClient.Name}|{e.Message}");
+                Telegram telegram = new Telegram(Constants.TelegramTypes.ChatMessage);
+                telegram[Constants.TelegramFields.Sender] = sendingClient.Name;
+                telegram[Constants.TelegramFields.Text] = e.Message;
+
+                recipients[i].SendTelegram(telegram);
             }
         }
 
@@ -178,26 +183,22 @@ namespace AblageServer
         }
 
 
-        private void BroadcastMessage(AblagenClient sendingClient, string message)
+        private void BroadcastMessage(AblagenClient sendingClient, Telegram telegram)
         {
             List<AblagenClient> recipientClients = GetOtherOnlineClients(sendingClient);
 
             for (int i = 0; i < recipientClients.Count; i++)
             {
                 int index = i;
-                recipientClients[i].SendControlMessage(message);
+                recipientClients[i].SendTelegram(telegram);
             }
         }
 
         private void HandleSignIn(AblagenClient sendingClient, EventArgs e)
         {
-            BroadcastMessage(sendingClient, $"+{sendingClient.Name}");
-
-            List<string> onlineClientNames = GetOtherOnlineClients(sendingClient).Select(k => k.Name).ToList();
-            for (int i = 0; i < onlineClientNames.Count; i++)
-            {
-                sendingClient.SendControlMessage($"+{onlineClientNames[i]}");
-            }
+            Telegram telegram = new Telegram(Constants.TelegramTypes.OnlineNotification);
+            telegram[Constants.TelegramFields.Name] = sendingClient.Name;
+            BroadcastMessage(sendingClient, telegram);
         }
 
 
@@ -222,7 +223,10 @@ namespace AblageServer
             onlineClients.Remove(item.Key);
             logger.Debug($"{sendingClient.Name} removed");
 
-            BroadcastMessage(sendingClient, $"-{sendingClient.Name}");
+
+            Telegram telegram = new Telegram(Constants.TelegramTypes.OfflineNotification);
+            telegram[Constants.TelegramFields.Name] = sendingClient.Name;
+            BroadcastMessage(sendingClient, telegram);
         }
 
 
@@ -245,7 +249,7 @@ namespace AblageServer
                 }
                 catch (Exception e)
                 {
-                    logger.Error("Exception during client shutdown");
+                    logger.Error("Exception during client shutdown",  e);
                 }
             }
         }

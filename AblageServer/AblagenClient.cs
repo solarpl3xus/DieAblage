@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CommunicationBase;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
@@ -7,17 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace AblageServer
-{
-    enum MessageType
-    {
-        Disconnect,
-        FileUpload,
-        Unknown,
-        ByteArrayUpload,
-        WatchdogRequest,
-        ChatMessage
-    }
-
+{    
     public class AblagenClient
     {
         private static log4net.ILog logger = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
@@ -43,12 +34,15 @@ namespace AblageServer
 
         private List<string> pendingUploads;
         List<byte[]> pendingDownloads;
+        private TelegramParser telegramParser;
 
         public AblagenClient(TcpClient client)
         {
             controlClient = client;
             pendingUploads = new List<string>();
             pendingDownloads = new List<byte[]>();
+
+            telegramParser = new TelegramParser();
         }
 
         public string Name { get; private set; }
@@ -69,59 +63,52 @@ namespace AblageServer
             controlStream = controlClient.GetStream();
 
             Name = string.Empty;
-
-            byte[] rawMessage = new byte[bufferSize];
-            int bytesRead;
+        
             try
             {
                 bool clientConnected = true;
                 while (clientConnected)
-                {
-                    bytesRead = 0;
-                    bytesRead = controlStream.Read(rawMessage, 0, bufferSize);
-                    if (bytesRead == 0)
+                {                
+                    Telegram signInTelegram = ReceiveControlTelegram();
+                    if (signInTelegram.TelegramType == Constants.TelegramTypes.SignIn)
                     {
-                        logger.Debug(Name + " says: client disconnected");
-                        break;
+                        Name = signInTelegram[Constants.TelegramFields.Name];
+                        logger.Info($"{Name} signed in");
+                        SignIn?.Invoke(this, new EventArgs());
                     }
-                    Name = Encoding.ASCII.GetString(rawMessage).Substring(0, bytesRead);
-                    logger.Info($"{Name} signed in");
-                    SignIn?.Invoke(this, new EventArgs());
+                    else
+                    {
+                        clientConnected = false;
+                        logger.Debug(Name + " says: client disconnected");
+                    }
+
 
                     while (clientConnected)
                     {
-                        bytesRead = 0;
+                        Telegram telegram = ReceiveControlTelegram();
 
-                        string message = string.Empty;
-                        MessageType messageType = ReceiveControlMessage(out message);
-
-
-                        switch (messageType)
+                        switch (telegram.TelegramType)
                         {
-                            case MessageType.Disconnect:
+                            case Constants.TelegramTypes.Disconnect:
                                 clientConnected = false;
                                 break;
-                            case MessageType.FileUpload:
-                                HandleFileUploadRequest(message);
+                            case Constants.TelegramTypes.ByteArrayTransferRequest:
+                                HandleByteUploadRequest(telegram);
                                 break;
-                            case MessageType.ByteArrayUpload:
-                                HandleByteUploadRequest(message);
+                            case Constants.TelegramTypes.FileTransferRequest:
+                                HandleFileUploadRequest(telegram);
                                 break;
-                            case MessageType.WatchdogRequest:
-                                HandleWatchdogRequest(message);
+                            case Constants.TelegramTypes.WatchdogRequest:
+                                HandleWatchdogRequest(telegram);
                                 break;
-                            case MessageType.ChatMessage:
-                                DistributeChatMessage(message);
+                            case Constants.TelegramTypes.ChatMessage:
+                                DistributeChatMessage(telegram);
                                 break;
-                            case MessageType.Unknown:
+                            case Constants.TelegramTypes.Unknown:
                                 logger.Debug("Unknown Message received, discarding");
                                 break;
-                            default:
-                                break;
                         }
-
                     }
-
                 }
             }
             catch (Exception e)
@@ -143,79 +130,78 @@ namespace AblageServer
             }
         }
 
-        private void DistributeChatMessage(string message)
+        private void DistributeChatMessage(Telegram telegram)
         {
-            ChatMessageReceive?.Invoke(this, new ChatMessageEventArgs(message.Substring(1)));
+            string chatMessage = telegram[Constants.TelegramFields.Text];
+            ChatMessageReceive?.Invoke(this, new ChatMessageEventArgs(chatMessage));
         }
 
-        private MessageType ReceiveControlMessage(out string message)
+        private Telegram ReceiveControlTelegram()
         {
-            message = string.Empty;
-            MessageType messageType;
-
             byte[] rawMessage = new byte[bufferSize];
             int bytesRead;
 
             bytesRead = controlStream.Read(rawMessage, 0, bufferSize);
-            message = Encoding.ASCII.GetString(rawMessage).Substring(0, bytesRead);
+            string message = Encoding.ASCII.GetString(rawMessage).Substring(0, bytesRead);
             logger.Info($"{Name} > {message}");
+
+            Telegram telegram;
             if (bytesRead == 0)
             {
                 logger.Debug(Name + " says: client disconnected");
-                messageType = MessageType.Disconnect;
-            }
-            else if (message.StartsWith("<!"))
-            {
-                messageType = MessageType.ByteArrayUpload;
-            }
-            else if (message.StartsWith("<"))
-            {
-                messageType = MessageType.FileUpload;
-            }
-            else if (message.StartsWith("!"))
-            {
-                messageType = MessageType.ChatMessage;
-            }
-            else if (message == "PING")
-            {
-                messageType = MessageType.WatchdogRequest;
+                telegram = new Telegram(Constants.TelegramTypes.Disconnect);
             }
             else
             {
-                messageType = MessageType.Unknown;
+                telegram = telegramParser.ParseMessage(message);
             }
 
-            return messageType;
+            return telegram;
         }
 
 
-        private void HandleWatchdogRequest(string message)
+        public void SendTelegram(Telegram telegram)
         {
-            SendControlMessage("PONG");
+            string message = telegramParser.ParseTelegram(telegram);
+            SendControlMessage(message);
         }
 
-
-        private void HandleByteUploadRequest(string message)
+        private void SendControlMessage(string message)
         {
-            string fileName = message.Substring(2);
+            controlStream.Write(Encoding.ASCII.GetBytes(message), 0, message.Length);
+        }
+
+        private void HandleWatchdogRequest(Telegram telegram)
+        {
+            Telegram sendTelegram = new Telegram(Constants.TelegramTypes.WatchdogReply);
+            SendTelegram(sendTelegram);
+        }
+        
+
+        private void HandleByteUploadRequest(Telegram telegram)
+        {
+            string fileName = telegram[Constants.TelegramFields.FileName];
 
             pendingUploads.Add(fileName);
 
             logger.Info($"Request to receive {fileName} from {Name}");
-            SendControlMessage($"OK!{fileName}");
-            logger.Info("Confirmed request");
+
+            Telegram sendTelegram = new Telegram(Constants.TelegramTypes.ByteSendAccept);
+            sendTelegram[Constants.TelegramFields.FileName] = fileName;
+            SendTelegram(sendTelegram);
         }
 
 
-        private void HandleFileUploadRequest(string message)
+        private void HandleFileUploadRequest(Telegram telegram)
         {
-            string fileName = message.Substring(1);
+            string fileName = telegram[Constants.TelegramFields.FileName];
 
             pendingUploads.Add(fileName);
 
             logger.Info($"Request to receive {fileName} from {Name}");
-            SendControlMessage("OK");
-            logger.Info("Confirmed request");
+
+            Telegram sendTelegram = new Telegram(Constants.TelegramTypes.FileSendAccept);
+            SendTelegram(sendTelegram);            
         }
 
         public static T[] SubArray<T>(T[] data, int index, int length)
@@ -225,10 +211,7 @@ namespace AblageServer
             return result;
         }
 
-        internal void SendControlMessage(string message)
-        {
-            controlStream.Write(Encoding.ASCII.GetBytes(message), 0, message.Length);
-        }
+       
 
         internal void HandleIncomingDataConnection(TcpClient dataclient)
         {
@@ -293,11 +276,16 @@ namespace AblageServer
                 try
                 {
                     pendingDownloads.Add(distributionRequestArgs.FileBytes);
-                    SendControlMessage($">{distributionRequestArgs.FileName}|{distributionRequestArgs.FileBytes.Length}|{distributionRequestArgs.Sender}");
+                    Telegram telegram = new Telegram(Constants.TelegramTypes.IncomingFileTransfer);
+                    telegram[Constants.TelegramFields.FileName] = distributionRequestArgs.FileName;
+                    telegram[Constants.TelegramFields.FileSize] = distributionRequestArgs.FileBytes.Length.ToString();
+                    telegram[Constants.TelegramFields.Sender] = distributionRequestArgs.Sender;
+
+                    SendTelegram(telegram);
                 }
                 catch (Exception e)
                 {
-                    logger.Error(e);                    
+                    logger.Error(e);
                 }
             }).Start();
         }
