@@ -31,5 +31,11 @@ namespace AblageServer.Service
         {
             ablageServerController.ShutdownConnections();
         }
+
+        protected override void OnShutdown()
+        {
+            ablageServerController.ShutdownConnections();
+            base.OnShutdown();
+        }
     }
 }
