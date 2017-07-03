@@ -240,6 +240,8 @@ namespace AblageServer
 
                     NetworkStream dataStream = dataclient.GetStream();
 
+                    dataStream.Write(Encoding.ASCII.GetBytes("GO"), 0, "GO".Length);
+
                     var buffer = new byte[1024];
 
                     int bytesRead = 0;

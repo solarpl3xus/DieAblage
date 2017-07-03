@@ -320,20 +320,23 @@ namespace AblageClient
                 hostDataClient = new TcpClient(AblagenConfiguration.HostIp, AblagenConfiguration.HostDataPort);
             }
 
-            ASCIIEncoding encoder = new ASCIIEncoding();
-            byte[] buffer = encoder.GetBytes(AblagenConfiguration.ClientName);
             logger.Info($"<{AblagenConfiguration.ClientName}");
-            hostControlStream.Write(Encoding.ASCII.GetBytes(AblagenConfiguration.ClientName), 0, AblagenConfiguration.ClientName.Length);
+            hostDataClient.GetStream().Write(Encoding.ASCII.GetBytes(AblagenConfiguration.ClientName), 0, AblagenConfiguration.ClientName.Length);
 
+            byte[] rawMessage = new byte[bufferSize];
+            int bytesRead = hostDataClient.GetStream().Read(rawMessage, 0, bufferSize);
 
-            fileBytes = Encryption.Encrypt(fileBytes, "kackbratze");
-            for (int offset = 0; offset < fileBytes.Length; offset += 1024)
+            if (bytesRead > 0)
             {
-                int size = Math.Min(1024, fileBytes.Length - offset);
-                hostDataClient.GetStream().Write(fileBytes, offset, size);
-                Form.ReportUploadProgess((int)((long)offset * 100 / fileBytes.Length), fileName);
+                fileBytes = Encryption.Encrypt(fileBytes, "kackbratze");
+                for (int offset = 0; offset < fileBytes.Length; offset += 1024)
+                {
+                    int size = Math.Min(1024, fileBytes.Length - offset);
+                    hostDataClient.GetStream().Write(fileBytes, offset, size);
+                    Form.ReportUploadProgess((int)((long)offset * 100 / fileBytes.Length), fileName);
+                }
+                Form.ReportUploadProgess(100, fileName);
             }
-            Form.ReportUploadProgess(100, fileName);
 
             hostDataClient.GetStream().Close();
             hostDataClient.Close();

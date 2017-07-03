@@ -27,6 +27,8 @@ namespace AblageServer
 
         private Dictionary<string, AblagenClient> onlineClients = new Dictionary<string, AblagenClient>();
         private bool echoMode;
+        private int bufferSize = 1024;
+
 
         public AblageServerController(bool echoMode = false)
         {
@@ -96,8 +98,6 @@ namespace AblageServer
                         ablagenClient.ChatMessageReceive += HandleChatMessageReceive;
 
                         ablagenClient.StartCommunication();
-
-
                     }
                 }
                 catch (SocketException)
@@ -140,22 +140,28 @@ namespace AblageServer
 
                         NetworkStream dataStream = dataclient.GetStream();
                         
-                        int bufferSize = 1024;
                         byte[] rawMessage = new byte[bufferSize];
-                        int bytesRead;
-
-                        bytesRead = dataStream.Read(rawMessage, 0, bufferSize);
-                        string message = Encoding.ASCII.GetString(rawMessage).Substring(0, bytesRead).Substring(0, bytesRead);
-                        logger.Info($"> {message}");
+                        int bytesRead = dataStream.Read(rawMessage, 0, bufferSize);
                         
-
-                        if (!onlineClients.ContainsKey(ipAddress))
+                        if (bytesRead > 0)
                         {
-                            logger.Error("No control client exists");
+                            string message = Encoding.ASCII.GetString(rawMessage).Substring(0, bytesRead).Substring(0, bytesRead);
+                            logger.Info($"> {message}");
+
+                            string identifier = $"{ipAddress}-{message}";
+
+                            if (!onlineClients.ContainsKey(identifier))
+                            {
+                                logger.Error("No control client exists");
+                            }
+                            else
+                            {
+                                onlineClients[identifier].HandleIncomingDataConnection(dataclient);
+                            } 
                         }
                         else
                         {
-                            onlineClients[ipAddress].HandleIncomingDataConnection(dataclient);
+                            logger.Error("Disconnected before identifying");
                         }
                     }
                 }
@@ -190,6 +196,14 @@ namespace AblageServer
 
             onlineClients[sendingClient.Identifier] = sendingClient;
             BroadcastMessage(sendingClient, onlineNotification);
+            
+            List<AblagenClient> otherClients = GetOtherOnlineClients(sendingClient);
+            for (int i = 0; i < otherClients.Count; i++)
+            {
+                onlineNotification = new Telegram(Constants.TelegramTypes.OnlineNotification);
+                onlineNotification[Constants.TelegramFields.Name] = otherClients[i].Name;
+                sendingClient.SendTelegram(onlineNotification);
+            }
         }
 
         private void HandleChatMessageReceive(AblagenClient sendingClient, ChatMessageEventArgs e)

@@ -43,6 +43,8 @@ namespace AblageClient
             controller = new AblagenController(this);
             globalKeyListener = new GlobalKeyListener(this);
 
+            Title += $" - {AblagenConfiguration.ClientName}";
+
             hostConnectedLabel.Visibility = Visibility.Collapsed;
             new Thread(() =>
             {
