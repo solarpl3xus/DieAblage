@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
@@ -46,6 +47,22 @@ namespace AblageServer
         }
 
         public string Name { get; private set; }
+
+        public string IpAddress
+        {
+            get
+            {
+                return ((IPEndPoint)controlClient.Client.RemoteEndPoint).Address.ToString(); 
+            }
+        }
+
+        public string Identifier
+        {
+            get
+            {
+                return $"{IpAddress}-{Name}";
+            }
+        }
 
         internal void StartCommunication()
         {
@@ -222,6 +239,8 @@ namespace AblageServer
                     string fileName = pendingUploads.First();
 
                     NetworkStream dataStream = dataclient.GetStream();
+
+                    dataStream.Write(Encoding.ASCII.GetBytes("GO"), 0, "GO".Length);
 
                     var buffer = new byte[1024];
 
