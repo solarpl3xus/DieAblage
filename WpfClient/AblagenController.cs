@@ -93,9 +93,9 @@ namespace AblageClient
 
             hostControlStream = hostControlClient.GetStream();
 
-            Telegram telegram = new Telegram(Constants.TelegramTypes.SignIn);
-            telegram[Constants.TelegramFields.Name] = AblagenConfiguration.ClientName;
-            SendTelegram(telegram);
+            Telegram signInTelegram = new Telegram(Constants.TelegramTypes.SignIn);
+            signInTelegram[Constants.TelegramFields.Name] = AblagenConfiguration.ClientName;
+            SendTelegram(signInTelegram);
 
             logger.Debug($"logged in as {AblagenConfiguration.ClientName}");
         }
@@ -170,7 +170,7 @@ namespace AblageClient
 
                 pendingBytes.Add(byteArray);
 
-                Telegram telegram = new Telegram(Constants.TelegramTypes.ByteArrayTransferRequest);
+                Telegram telegram = new Telegram(Constants.TelegramTypes.ByteArrayTransferRequest);                
                 telegram[Constants.TelegramFields.FileName] = fileName;
                 SendTelegram(telegram);
             }
@@ -186,9 +186,9 @@ namespace AblageClient
 
                 pendingFile.Add(filePath);
 
-                Telegram telegram = new Telegram(Constants.TelegramTypes.FileTransferRequest);
-                telegram[Constants.TelegramFields.FileName] = filePath.Substring(filePath.LastIndexOf('\\') + 1);
-                SendTelegram(telegram);
+                Telegram fileTransferRequest = new Telegram(Constants.TelegramTypes.FileTransferRequest);
+                fileTransferRequest[Constants.TelegramFields.FileName] = filePath.Substring(filePath.LastIndexOf('\\') + 1);
+                SendTelegram(fileTransferRequest);
             }
 
             ).Start();
@@ -202,9 +202,7 @@ namespace AblageClient
         }
 
         private void SendControlMessage(string message)
-        {
-            ASCIIEncoding encoder = new ASCIIEncoding();
-            byte[] buffer = encoder.GetBytes(message);
+        {            
             logger.Info($"<{message}");
             hostControlStream.Write(Encoding.ASCII.GetBytes(message), 0, message.Length);
         }
@@ -321,6 +319,13 @@ namespace AblageClient
             {
                 hostDataClient = new TcpClient(AblagenConfiguration.HostIp, AblagenConfiguration.HostDataPort);
             }
+
+            ASCIIEncoding encoder = new ASCIIEncoding();
+            byte[] buffer = encoder.GetBytes(AblagenConfiguration.ClientName);
+            logger.Info($"<{AblagenConfiguration.ClientName}");
+            hostControlStream.Write(Encoding.ASCII.GetBytes(AblagenConfiguration.ClientName), 0, AblagenConfiguration.ClientName.Length);
+
+
             fileBytes = Encryption.Encrypt(fileBytes, "kackbratze");
             for (int offset = 0; offset < fileBytes.Length; offset += 1024)
             {
@@ -372,9 +377,12 @@ namespace AblageClient
                         hostDataClient = new TcpClient(AblagenConfiguration.HostIp, AblagenConfiguration.HostDataPort);
                     }
 
+
                     Form.HandleFileDownloadStarted(sender, completePath);
 
                     NetworkStream hostDataStream = hostDataClient.GetStream();
+
+                    hostDataStream.Write(Encoding.ASCII.GetBytes(AblagenConfiguration.ClientName), 0, AblagenConfiguration.ClientName.Length);
 
                     int totalByteRead = 0;
                     int bytesRead;

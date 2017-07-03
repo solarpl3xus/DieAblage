@@ -89,18 +89,13 @@ namespace AblageServer
                         string ipAddress = ((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString();
                         logger.Debug($"Client connected {ipAddress}");
 
-                        if (onlineClients.ContainsKey(ipAddress))
-                        {
-                            logger.Warn("Already exists");
-                        }
-
                         AblagenClient ablagenClient = new AblagenClient(client);
-                        ablagenClient.StartCommunication();
                         ablagenClient.DistributeRequest += HandleDistributeRequest;
                         ablagenClient.Disconnect += HandleClientDisconnect;
                         ablagenClient.SignIn += HandleSignIn;
                         ablagenClient.ChatMessageReceive += HandleChatMessageReceive;
-                        onlineClients[ipAddress] = ablagenClient;
+
+                        ablagenClient.StartCommunication();
 
 
                     }
@@ -118,19 +113,6 @@ namespace AblageServer
                     logger.Fatal("Error during server initialization", e);
                     throw e;
                 }
-            }
-        }
-
-        private void HandleChatMessageReceive(AblagenClient sendingClient, ChatMessageEventArgs e)
-        {
-            List<AblagenClient> recipients = GetOtherOnlineClients(sendingClient);
-            for (int i = 0; i < recipients.Count; i++)
-            {
-                Telegram telegram = new Telegram(Constants.TelegramTypes.ChatMessage);
-                telegram[Constants.TelegramFields.Sender] = sendingClient.Name;
-                telegram[Constants.TelegramFields.Text] = e.Message;
-
-                recipients[i].SendTelegram(telegram);
             }
         }
 
@@ -155,6 +137,17 @@ namespace AblageServer
 
                         string ipAddress = ((IPEndPoint)dataclient.Client.RemoteEndPoint).Address.ToString();
                         logger.Debug($"Data client connected {ipAddress}");
+
+                        NetworkStream dataStream = dataclient.GetStream();
+                        
+                        int bufferSize = 1024;
+                        byte[] rawMessage = new byte[bufferSize];
+                        int bytesRead;
+
+                        bytesRead = dataStream.Read(rawMessage, 0, bufferSize);
+                        string message = Encoding.ASCII.GetString(rawMessage).Substring(0, bytesRead).Substring(0, bytesRead);
+                        logger.Info($"> {message}");
+                        
 
                         if (!onlineClients.ContainsKey(ipAddress))
                         {
@@ -183,24 +176,34 @@ namespace AblageServer
         }
 
 
-        private void BroadcastMessage(AblagenClient sendingClient, Telegram telegram)
-        {
-            List<AblagenClient> recipientClients = GetOtherOnlineClients(sendingClient);
-
-            for (int i = 0; i < recipientClients.Count; i++)
-            {
-                int index = i;
-                recipientClients[i].SendTelegram(telegram);
-            }
-        }
-
         private void HandleSignIn(AblagenClient sendingClient, EventArgs e)
         {
-            Telegram telegram = new Telegram(Constants.TelegramTypes.OnlineNotification);
-            telegram[Constants.TelegramFields.Name] = sendingClient.Name;
-            BroadcastMessage(sendingClient, telegram);
+            Telegram onlineNotification = new Telegram(Constants.TelegramTypes.OnlineNotification);
+            onlineNotification[Constants.TelegramFields.Name] = sendingClient.Name;
+
+            logger.Debug($"Client connected {sendingClient.Identifier}");
+
+            if (onlineClients.ContainsKey(sendingClient.Identifier))
+            {
+                logger.Warn("Already exists");
+            }
+
+            onlineClients[sendingClient.Identifier] = sendingClient;
+            BroadcastMessage(sendingClient, onlineNotification);
         }
 
+        private void HandleChatMessageReceive(AblagenClient sendingClient, ChatMessageEventArgs e)
+        {
+            List<AblagenClient> recipients = GetOtherOnlineClients(sendingClient);
+            for (int i = 0; i < recipients.Count; i++)
+            {
+                Telegram chatMessage = new Telegram(Constants.TelegramTypes.ChatMessage);
+                chatMessage[Constants.TelegramFields.Sender] = sendingClient.Name;
+                chatMessage[Constants.TelegramFields.Text] = e.Message;
+
+                recipients[i].SendTelegram(chatMessage);
+            }
+        }
 
         private void HandleDistributeRequest(AblagenClient sendingClient, DistributionRequestArgs distributionRequestArgs)
         {
@@ -212,22 +215,45 @@ namespace AblageServer
             }
         }
 
+        private void HandleClientDisconnect(AblagenClient sendingClient, EventArgs e)
+        {
+            var item = onlineClients.First(kvp => kvp.Value == sendingClient);
+            onlineClients.Remove(item.Key);
+            logger.Debug($"{sendingClient.Name} removed from list of online clients");
+            
+            Telegram offlineNotification = new Telegram(Constants.TelegramTypes.OfflineNotification);
+            offlineNotification[Constants.TelegramFields.Name] = sendingClient.Name;
+            BroadcastMessage(sendingClient, offlineNotification);
+        }
+
+
+
+        public static T[] SubArray<T>(T[] data, int index, int length)
+        {
+            T[] result = new T[length];
+            Array.Copy(data, index, result, 0, length);
+            return result;
+        }
+
+        private void BroadcastMessage(AblagenClient sendingClient, Telegram telegram)
+        {
+            List<AblagenClient> recipientClients = GetOtherOnlineClients(sendingClient);
+
+            for (int i = 0; i < recipientClients.Count; i++)
+            {
+                int index = i;
+                recipientClients[i].SendTelegram(telegram);
+            }
+        }
+
+
+
+
         private List<AblagenClient> GetOtherOnlineClients(AblagenClient sendingClient)
         {
             return onlineClients.Values.Where(ac => (echoMode || ac != sendingClient)).ToList();
         }
 
-        private void HandleClientDisconnect(AblagenClient sendingClient, EventArgs e)
-        {
-            var item = onlineClients.First(kvp => kvp.Value == sendingClient);
-            onlineClients.Remove(item.Key);
-            logger.Debug($"{sendingClient.Name} removed");
-
-
-            Telegram telegram = new Telegram(Constants.TelegramTypes.OfflineNotification);
-            telegram[Constants.TelegramFields.Name] = sendingClient.Name;
-            BroadcastMessage(sendingClient, telegram);
-        }
 
 
 
@@ -249,7 +275,7 @@ namespace AblageServer
                 }
                 catch (Exception e)
                 {
-                    logger.Error("Exception during client shutdown",  e);
+                    logger.Error("Exception during client shutdown", e);
                 }
             }
         }
